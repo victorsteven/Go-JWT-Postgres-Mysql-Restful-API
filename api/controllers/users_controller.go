@@ -11,10 +11,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/victorsteven/fullstack/api/auth"
 	"github.com/victorsteven/fullstack/api/database"
-	"github.com/victorsteven/fullstack/api/models"
 	"github.com/victorsteven/fullstack/api/interfaces"
-	"github.com/victorsteven/fullstack/api/services"
+	"github.com/victorsteven/fullstack/api/models"
 	"github.com/victorsteven/fullstack/api/responses"
+	"github.com/victorsteven/fullstack/api/services"
 )
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -137,6 +137,14 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user.Prepare()
+
+	err = user.Validate("update")
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
 	db, err := database.Connect()
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
@@ -147,12 +155,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	dbInstance := services.NewDbInstance(db)
 
 	func(userInterface interfaces.UserInterface) {
-		rows, err := userInterface.UpdateAUser(uint32(uid), user)
+		updatedUser, err := userInterface.UpdateAUser(uint32(uid), user)
 		if err != nil {
 			responses.ERROR(w, http.StatusBadRequest, err)
 			return
 		}
-		responses.JSON(w, http.StatusOK, rows)
+		responses.JSON(w, http.StatusOK, updatedUser)
 	}(dbInstance)
 }
 

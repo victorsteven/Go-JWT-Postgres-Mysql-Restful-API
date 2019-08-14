@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -65,18 +66,19 @@ func (r *DbInstance) FindUserByID(uid uint32) (models.User, error) {
 	if channels.OK(done) {
 		return user, nil
 	}
-
 	if gorm.IsRecordNotFoundError(err) {
 		return models.User{}, errors.New("user not found")
 	}
 	return models.User{}, err
 }
 
-func (r *DbInstance) UpdateAUser(uid uint32, user models.User) (int64, error) {
+func (r *DbInstance) UpdateAUser(uid uint32, user models.User) (models.User, error) {
+	fmt.Printf("this is the id to update: %v", uid)
 	var rs *gorm.DB
 	done := make(chan bool)
 	go func(ch chan<- bool) {
 		defer close(ch)
+		// rs = r.DB.Debug().Model(&models.User{}).Where("id = ?", uid).Take(&models.User{}).UpdateColumns(
 		rs = r.DB.Debug().Model(&models.User{}).Where("id = ?", uid).Take(&models.User{}).UpdateColumns(
 			map[string]interface{}{
 				"nickname":  user.Nickname,
@@ -89,11 +91,18 @@ func (r *DbInstance) UpdateAUser(uid uint32, user models.User) (int64, error) {
 
 	if channels.OK(done) {
 		if rs.Error != nil {
-			return 0, rs.Error
+			return models.User{}, rs.Error
 		}
-		return rs.RowsAffected, nil
+		// return user, nil
+
+		// This is the display the updated user
+		err := r.DB.Debug().Model(&models.User{}).Where("id = ?", uid).Take(&user).Error
+		if err != nil {
+			return models.User{}, rs.Error
+		}
+		return user, nil
 	}
-	return 0, rs.Error
+	return models.User{}, rs.Error
 }
 
 func (r *DbInstance) DeleteAUser(uid uint32) (int64, error) {

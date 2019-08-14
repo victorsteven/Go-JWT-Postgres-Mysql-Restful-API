@@ -11,10 +11,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/victorsteven/fullstack/api/auth"
 	"github.com/victorsteven/fullstack/api/database"
-	"github.com/victorsteven/fullstack/api/models"
 	"github.com/victorsteven/fullstack/api/interfaces"
-	"github.com/victorsteven/fullstack/api/services"
+	"github.com/victorsteven/fullstack/api/models"
 	"github.com/victorsteven/fullstack/api/responses"
+	"github.com/victorsteven/fullstack/api/services"
 )
 
 func CreatePost(w http.ResponseWriter, r *http.Request) {
