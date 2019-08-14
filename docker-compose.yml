@@ -1,0 +1,25 @@
+version: '3'
+services:
+  app:
+    build: .
+    ports: 
+      - 8080:8080
+    depends_on: 
+      - db
+    restart: on-failure
+    environment:
+      - DATABASE_HOST=${DB_HOST} 
+    # volumes: 
+    #   - ./:/app
+  db:
+    image: mysql:5.7
+    ports: 
+      - 3306:3306
+    environment: 
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - DATABASE_HOST=${DB_HOST} 
+
+     
