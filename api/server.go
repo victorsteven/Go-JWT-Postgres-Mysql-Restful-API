@@ -3,22 +3,32 @@ package api
 import (
 	"fmt"
 	"log"
-	"net/http"
+	"os"
 
-	"github.com/victorsteven/fullstack/api/router"
-	"github.com/victorsteven/fullstack/api/seed"
-	"github.com/victorsteven/fullstack/config"
+	// "github.com/victorsteven/fullstack/api/router"
+	"github.com/joho/godotenv"
+	"github.com/victorsteven/fullstack/api/controllers"
 )
 
 func Run() {
-	config.Load()
-	seed.Load()
-	fmt.Println("this is after seeding fresh")
-	fmt.Printf("running... at port %d\n\n", config.PORT)
-	listen(config.PORT)
-}
+	// config.Load()
+	// seed.Load()
+	// fmt.Println("this is after seeding fresh")
+	fmt.Printf("running... at port %d\n\n", 8080)
+	// listen(8080)
 
-func listen(port int) {
-	r := router.New()
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), router.LoadCORS(r)))
+	server := controllers.Server{}
+
+	var err error
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error getting env %v", err)
+	} else {
+		fmt.Println("We are getting the env values")
+	}
+
+	server.Initialize(os.Getenv("DB_DRIVER"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
+
+	server.Run(":8080")
+
 }

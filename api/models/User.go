@@ -2,19 +2,22 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"html"
 	"strings"
 	"time"
 
 	"github.com/badoux/checkmail"
+	"github.com/jinzhu/gorm"
 	"github.com/victorsteven/fullstack/api/security"
+	"github.com/victorsteven/fullstack/api/utils/channels"
 )
 
 type User struct {
 	ID        uint32    `gorm:"primary_key;auto_increment" json:"id"`
 	Nickname  string    `gorm:"size:255;not null;unique" json:"nickname"`
 	Email     string    `gorm:"size:100;not null;unique" json:"email"`
-	Password  string    `gorm:"size:100;not null;unique" json:"password"`
+	Password  string    `gorm:"size:100;not null;" json:"password"`
 	CreatedAt time.Time `gorm:"default:current_timestamp()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"default:current_timestamp()" json:"updated_at"`
 	// Posts     []Post    `gorm:"foreignkey:AuthorID" json:"posts"`
@@ -44,24 +47,25 @@ func (u *User) Validate(action string) error {
 			return errors.New("Required Nickname")
 		}
 		if u.Password == "" {
-			return errors.New("Required password")
+			return errors.New("Required Password")
 		}
 		if u.Email == "" {
-			return errors.New("Required email")
+			return errors.New("Required Email")
 		}
 		if err := checkmail.ValidateFormat(u.Email); err != nil {
-			return errors.New("Invalid email")
+			return errors.New("Invalid Email")
 		}
+
 		return nil
 	case "login":
 		if u.Password == "" {
-			return errors.New("Password required")
+			return errors.New("Password Required")
 		}
 		if u.Email == "" {
-			return errors.New("Email required")
+			return errors.New("Email Required")
 		}
 		if err := checkmail.ValidateFormat(u.Email); err != nil {
-			return errors.New("Invalid email")
+			return errors.New("Invalid Email")
 		}
 		return nil
 
@@ -76,8 +80,115 @@ func (u *User) Validate(action string) error {
 			return errors.New("Required Email")
 		}
 		if err := checkmail.ValidateFormat(u.Email); err != nil {
-			return errors.New("Invalid email")
+			return errors.New("Invalid Email")
 		}
 		return nil
 	}
+}
+
+func (u *User) SaveUser(db *gorm.DB) (*User, error) {
+	var err error
+	done := make(chan bool)
+	go func(ch chan<- bool) {
+		defer close(ch)
+		err = db.Debug().Create(&u).Error
+		if err != nil {
+			ch <- false
+			return
+		}
+		ch <- true
+	}(done)
+
+	if channels.OK(done) {
+		return u, nil
+	}
+	return &User{}, err
+}
+
+func (u *User) FindAllUsers(db *gorm.DB) (*[]User, error) {
+	var err error
+	users := []User{}
+	done := make(chan bool)
+	go func(ch chan<- bool) {
+		defer close(ch)
+		err = db.Debug().Model(&User{}).Limit(100).Find(&users).Error
+		if err != nil {
+			ch <- false
+			return
+		}
+		ch <- true
+	}(done)
+
+	if channels.OK(done) {
+		return &users, nil
+	}
+	return nil, err
+}
+
+func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
+	var err error
+	done := make(chan bool)
+	go func(ch chan<- bool) {
+		defer close(ch)
+		err = db.Debug().Model(User{}).Where("id = ?", uid).Take(&u).Error
+		if err != nil {
+			ch <- false
+			return
+		}
+		ch <- true
+	}(done)
+
+	if channels.OK(done) {
+		return u, nil
+	}
+	if gorm.IsRecordNotFoundError(err) {
+		return &User{}, errors.New("user not found")
+	}
+	return &User{}, err
+}
+
+func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
+	fmt.Printf("this is the id to update: %v", uid)
+	done := make(chan bool)
+	go func(ch chan<- bool) {
+		defer close(ch)
+		db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).UpdateColumns(
+			map[string]interface{}{
+				"nickname":  u.Nickname,
+				"email":     u.Email,
+				"update_at": time.Now(),
+			},
+		)
+		ch <- true
+	}(done)
+
+	if channels.OK(done) {
+		if db.Error != nil {
+			return &User{}, db.Error
+		}
+		// This is the display the updated user
+		err := db.Debug().Model(&User{}).Where("id = ?", uid).Take(&u).Error
+		if err != nil {
+			return &User{}, db.Error
+		}
+		return u, nil
+	}
+	return &User{}, db.Error
+}
+
+func (u *User) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
+	done := make(chan bool)
+	go func(ch chan<- bool) {
+		defer close(ch)
+		db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).Delete(&User{})
+		ch <- true
+	}(done)
+
+	if channels.OK(done) {
+		if db.Error != nil {
+			return 0, db.Error
+		}
+		return db.RowsAffected, nil
+	}
+	return 0, db.Error
 }
