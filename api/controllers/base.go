@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/victorsteven/fullstack/api/models"
 )
 
 type Server struct {
@@ -23,6 +24,8 @@ func (server *Server) Initialize(Dbdriver, User, Password, Dbname string) {
 	if err != nil {
 		log.Fatal("cannot connect to the database", err)
 	}
+
+	server.DB.Debug().AutoMigrate(&models.User{}) //database migration
 
 	server.Router = mux.NewRouter()
 	server.initializeRoutes()

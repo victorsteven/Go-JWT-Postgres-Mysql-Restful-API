@@ -8,8 +8,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 
+	// "strconv"
+	// "reflect"
+
+	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
 	"github.com/victorsteven/fullstack/api/controllers"
@@ -62,8 +67,8 @@ func seedOneUser() (models.User, error) {
 	refreshTable()
 
 	user := models.User{
-		Nickname: "Kenny Morris",
-		Email:    "kenny@gmail.com",
+		Nickname: "Pet",
+		Email:    "pet@gmail.com",
 		Password: "password",
 	}
 
@@ -97,53 +102,59 @@ func seedUsers() {
 	}
 }
 
-type sampleCases struct {
-	inputJson    string
-	statusCode   int
-	nickname     string
-	email        string
-	errorMessage string
-}
-
 func TestCreateUser(t *testing.T) {
 
 	refreshTable()
 
-	samples := []sampleCases{
-		sampleCases{
-			inputJson:    `{"nickname":"Pet", "email": "pet@gmail.com", "password": "password"}`,
+	// type sampleCases struct {
+	// 	inputJSON    string
+	// 	statusCode   int
+	// 	nickname     string
+	// 	email        string
+	// 	errorMessage string
+	// }
+
+	samples := []struct {
+		inputJSON    string
+		statusCode   int
+		nickname     string
+		email        string
+		errorMessage string
+	}{
+		{
+			inputJSON:    `{"nickname":"Pet", "email": "pet@gmail.com", "password": "password"}`,
 			statusCode:   201,
 			nickname:     "Pet",
 			email:        "pet@gmail.com",
 			errorMessage: "",
 		},
-		sampleCases{
-			inputJson:    `{"nickname":"Frank", "email": "pet@gmail.com", "password": "password"}`,
+		{
+			inputJSON:    `{"nickname":"Frank", "email": "pet@gmail.com", "password": "password"}`,
 			statusCode:   500,
 			errorMessage: "Email Already Taken",
 		},
-		sampleCases{
-			inputJson:    `{"nickname":"Pet", "email": "grand@gmail.com", "password": "password"}`,
+		{
+			inputJSON:    `{"nickname":"Pet", "email": "grand@gmail.com", "password": "password"}`,
 			statusCode:   500,
 			errorMessage: "Nickname Already Taken",
 		},
-		sampleCases{
-			inputJson:    `{"nickname":"Kan", "email": "kangmail.com", "password": "password"}`,
+		{
+			inputJSON:    `{"nickname":"Kan", "email": "kangmail.com", "password": "password"}`,
 			statusCode:   422,
 			errorMessage: "Invalid Email",
 		},
-		sampleCases{
-			inputJson:    `{"nickname": "", "email": "kan@gmail.com", "password": "password"}`,
+		{
+			inputJSON:    `{"nickname": "", "email": "kan@gmail.com", "password": "password"}`,
 			statusCode:   422,
 			errorMessage: "Required Nickname",
 		},
-		sampleCases{
-			inputJson:    `{"nickname": "Kan", "email": "", "password": "password"}`,
+		{
+			inputJSON:    `{"nickname": "Kan", "email": "", "password": "password"}`,
 			statusCode:   422,
 			errorMessage: "Required Email",
 		},
-		sampleCases{
-			inputJson:    `{"nickname": "Kan", "email": "kan@gmail.com", "password": ""}`,
+		{
+			inputJSON:    `{"nickname": "Kan", "email": "kan@gmail.com", "password": ""}`,
 			statusCode:   422,
 			errorMessage: "Required Password",
 		},
@@ -151,7 +162,7 @@ func TestCreateUser(t *testing.T) {
 
 	for _, v := range samples {
 
-		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(v.inputJson))
+		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(v.inputJSON))
 		if err != nil {
 			log.Fatalf("this is the error: %v", err)
 		}
@@ -159,7 +170,7 @@ func TestCreateUser(t *testing.T) {
 		handler := http.HandlerFunc(server.CreateUser)
 		handler.ServeHTTP(rr, req)
 
-		fmt.Printf("This is the response payload: %v", rr.Body)
+		// fmt.Printf("This is the response payload: %v", rr.Body)
 
 		responseMap := make(map[string]interface{})
 		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
@@ -205,35 +216,101 @@ func TestGetUserByID(t *testing.T) {
 	refreshTable()
 
 	user, err := seedOneUser()
-
-	fmt.Printf("this is the user: %v", user)
 	if err != nil {
 		log.Fatal(err)
 	}
-	id := []byte(fmt.Sprintf(`{"id":%d}`, user.ID))
-	req, err := http.NewRequest("GET", "/users", bytes.NewReader(id))
-	if err != nil {
-		log.Fatalf("this is the error: %v\n", err)
+
+	userSample := []struct {
+		id           string
+		statusCode   int
+		nickname     string
+		email        string
+		errorMessage string
+	}{
+		{
+			id:         strconv.Itoa(int(user.ID)),
+			statusCode: 200,
+			nickname:   user.Nickname,
+			email:      user.Email,
+		},
+		{
+			id:         "unknwon",
+			statusCode: 400,
+		},
 	}
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(server.GetUser)
-	handler.ServeHTTP(rr, req)
 
-	fmt.Printf("this is the awesome: %v", rr.Body)
+	for _, v := range userSample {
 
-	// responseMap := make(map[string]interface{})
-	// err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
-	// if err != nil {
-	// 	fmt.Printf("Cannot convert to json: %v", err)
-	// }
+		req, _ := http.NewRequest("GET", "/users", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": v.id})
 
-	// fmt.Printf("This is the response json %v", responseMap)
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(server.GetUser)
+		handler.ServeHTTP(rr, req)
 
-	// assert.Equal(t, rr.Code, http.StatusCreated)
-	// assert.Equal(t, expectedMap["nickname"], responseMap["nickname"])
-	// assert.Equal(t, responseMap["email"], responseMap["email"])
+		responseMap := make(map[string]interface{})
+		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		if err != nil {
+			fmt.Printf("Cannot convert to json: %v", err)
+		}
+		assert.Equal(t, rr.Code, v.statusCode)
 
+		if v.statusCode == 200 {
+			assert.Equal(t, user.Nickname, responseMap["nickname"])
+			assert.Equal(t, user.Email, responseMap["email"])
+		}
+	}
 }
+
+// func TestUpdateUser(t *testing.T) {
+// 	refreshTable()
+// 	user, err := seedOneUser()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	// userSample := []struct {
+// 	// 	id           string
+// 	// 	statusCode   int
+// 	// 	nickname     string
+// 	// 	email        string
+// 	// 	errorMessage string
+// 	// }{
+// 	// 	{
+// 	// 		id:         strconv.Itoa(int(user.ID)),
+// 	// 		statusCode: 200,
+// 	// 		nickname:   user.Nickname,
+// 	// 		email:      user.Email,
+// 	// 	},
+// 	// 	{
+// 	// 		id:         "unknwon",
+// 	// 		statusCode: 400,
+// 	// 	},
+// 	// }
+
+// 	// for _, v := range userSample {
+
+// 	req, _ := http.NewRequest("PUT", "/users", nil)
+// 	req = mux.SetURLVars(req, map[string]string{"id": strconv.Itoa(int(user.ID))}) //For testing purposes
+
+// 	rr := httptest.NewRecorder()
+// 	handler := http.HandlerFunc(server.GetUser)
+// 	handler.ServeHTTP(rr, req)
+
+// 	responseMap := make(map[string]interface{})
+// 	err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+// 	if err != nil {
+// 		fmt.Printf("Cannot convert to json: %v", err)
+// 	}
+// 	assert.Equal(t, rr.Code, http.StatusOK)
+
+// 	// if v.statusCode == 200 {
+// 	// 	assert.Equal(t, user.Nickname, responseMap["nickname"])
+// 	// 	assert.Equal(t, user.Email, responseMap["email"])
+// 	// }
+// }
+
+// }
 
 // func TestCreateUser(t *testing.T) {
 
@@ -267,5 +344,139 @@ func TestGetUserByID(t *testing.T) {
 // 	assert.Equal(t, rr.Code, http.StatusCreated)
 // 	assert.Equal(t, expectedMap["nickname"], responseMap["nickname"])
 // 	assert.Equal(t, responseMap["email"], responseMap["email"])
-
 // }
+
+func TestUpdateUser(t *testing.T) {
+
+	refreshTable()
+
+	seedUsers() //we need atleast two users to properly check the update
+
+	samples := []struct {
+		id           string
+		updateJSON   string
+		statusCode   int
+		nickname     string
+		email        string
+		errorMessage string
+	}{
+		{
+			id:           strconv.Itoa(int(1)),
+			updateJSON:   `{"nickname":"Grand", "email": "grand@gmail.com", "password": "password"}`,
+			statusCode:   200,
+			nickname:     "Grand",
+			email:        "grand@gmail.com",
+			errorMessage: "",
+		},
+		{
+			id:           strconv.Itoa(int(1)),
+			updateJSON:   `{"nickname":"Frank", "email": "kenny@gmail.com", "password": "password"}`,
+			statusCode:   500,
+			errorMessage: "Email Already Taken",
+		},
+		{
+			id:           strconv.Itoa(int(1)),
+			updateJSON:   `{"nickname":"Kenny Morris", "email": "grand@gmail.com", "password": "password"}`,
+			statusCode:   500,
+			errorMessage: "Nickname Already Taken",
+		},
+		{
+			id:           strconv.Itoa(int(1)),
+			updateJSON:   `{"nickname":"Kan", "email": "kangmail.com", "password": "password"}`,
+			statusCode:   422,
+			errorMessage: "Invalid Email",
+		},
+		{
+			id:           strconv.Itoa(int(1)),
+			updateJSON:   `{"nickname": "", "email": "kan@gmail.com", "password": "password"}`,
+			statusCode:   422,
+			errorMessage: "Required Nickname",
+		},
+		{
+			id:           strconv.Itoa(int(1)),
+			updateJSON:   `{"nickname": "Kan", "email": "", "password": "password"}`,
+			statusCode:   422,
+			errorMessage: "Required Email",
+		},
+		{
+			id:         "unknwon",
+			statusCode: 400,
+		},
+		{
+			id:         strconv.Itoa(int(2)),
+			updateJSON: `{"nickname": "Mike", "email": "mike@gmail.com", "password": "password"}`,
+			statusCode: 401,
+		},
+	}
+
+	for _, v := range samples {
+
+		req, _ := http.NewRequest("POST", "/users", bytes.NewBufferString(v.updateJSON))
+
+		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(server.UpdateUser)
+
+		req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE1NjY2ODk5MjEsInVzZXJfaWQiOjF9.4CIgrndIbgUQELh6N2-y-w-pPTJRsHIoxnNY-izg7Kc")
+
+		handler.ServeHTTP(rr, req)
+
+		responseMap := make(map[string]interface{})
+		err := json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		if err != nil {
+			fmt.Printf("Cannot convert to json: %v", err)
+		}
+		assert.Equal(t, rr.Code, v.statusCode)
+		if v.statusCode == 200 {
+			assert.Equal(t, responseMap["nickname"], v.nickname)
+			assert.Equal(t, responseMap["email"], v.email)
+		}
+		if v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
+			assert.Equal(t, responseMap["error"], v.errorMessage)
+		}
+	}
+}
+
+func TestDeleteUser(t *testing.T) {
+
+	refreshTable()
+
+	seedUsers()
+
+	userSample := []struct {
+		id           string
+		statusCode   int
+		nickname     string
+		email        string
+		errorMessage string
+	}{
+		{
+			id:         strconv.Itoa(int(1)),
+			statusCode: 204,
+		},
+		{
+			id:         "unknwon",
+			statusCode: 400,
+		},
+		{
+			id:         strconv.Itoa(int(2)),
+			statusCode: 401,
+		},
+	}
+
+	for _, v := range userSample {
+
+		req, _ := http.NewRequest("GET", "/users", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(server.DeleteUser)
+
+		req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE1NjY2ODk5MjEsInVzZXJfaWQiOjF9.4CIgrndIbgUQELh6N2-y-w-pPTJRsHIoxnNY-izg7Kc")
+
+		handler.ServeHTTP(rr, req)
+
+		assert.Equal(t, rr.Code, v.statusCode)
+	}
+}

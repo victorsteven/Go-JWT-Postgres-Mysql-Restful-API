@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 
+	// "reflect"
+
 	"github.com/gorilla/mux"
 	"github.com/victorsteven/fullstack/api/auth"
 	"github.com/victorsteven/fullstack/api/models"
@@ -65,14 +67,17 @@ func (server *Server) GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) GetUser(w http.ResponseWriter, r *http.Request) {
+
 	vars := mux.Vars(r)
+
 	uid, err := strconv.ParseUint(vars["id"], 10, 32)
+
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
 	}
-	user := models.User{}
 
+	user := models.User{}
 	userGotten, err := user.FindUserByID(server.DB, uint32(uid))
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
@@ -84,8 +89,6 @@ func (server *Server) GetUser(w http.ResponseWriter, r *http.Request) {
 func (server *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	fmt.Printf("this is the i we got: %v\n", vars["id"])
-
 	uid, err := strconv.ParseUint(vars["id"], 10, 32)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
@@ -124,7 +127,7 @@ func (server *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 		formattedError := formaterror.FormatError(err.Error())
 
-		responses.ERROR(w, http.StatusBadRequest, formattedError)
+		responses.ERROR(w, http.StatusInternalServerError, formattedError)
 		return
 
 	}

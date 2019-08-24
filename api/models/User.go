@@ -46,9 +46,9 @@ func (u *User) Validate(action string) error {
 		if u.Nickname == "" {
 			return errors.New("Required Nickname")
 		}
-		if u.Password == "" {
-			return errors.New("Required Password")
-		}
+		// if u.Password == "" {
+		// 	return errors.New("Required Password")
+		// }
 		if u.Email == "" {
 			return errors.New("Required Email")
 		}
