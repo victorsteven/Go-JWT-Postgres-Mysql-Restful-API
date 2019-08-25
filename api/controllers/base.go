@@ -25,7 +25,7 @@ func (server *Server) Initialize(Dbdriver, User, Password, Dbname string) {
 		log.Fatal("cannot connect to the database", err)
 	}
 
-	server.DB.Debug().AutoMigrate(&models.User{}) //database migration
+	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}) //database migration
 
 	server.Router = mux.NewRouter()
 	server.initializeRoutes()

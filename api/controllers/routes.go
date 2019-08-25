@@ -6,25 +6,21 @@ func (s *Server) initializeRoutes() {
 
 	s.Router.HandleFunc("/login", s.Login).Methods("POST")
 
-	s.Router.HandleFunc("/users", s.CreateUser).Methods("POST")
 	s.Router.HandleFunc("/", s.Home).Methods("GET")
 
+	//Users routes
+	s.Router.HandleFunc("/users", middlewares.SetMiddlewareJSON(s.CreateUser)).Methods("POST")
 	s.Router.HandleFunc("/users", middlewares.SetMiddlewareJSON(s.GetUsers)).Methods("GET")
-	s.Router.HandleFunc("/users/{id}", s.GetUser).Methods("GET")
-
+	s.Router.HandleFunc("/users/{id}", middlewares.SetMiddlewareJSON(s.GetUser)).Methods("GET")
 	s.Router.HandleFunc("/users/{id}", middlewares.SetMiddlewareJSON(middlewares.SetMiddlewareAuthentication(s.UpdateUser))).Methods("PUT")
-	s.Router.HandleFunc("/users/{id}", middlewares.SetMiddlewareJSON(middlewares.SetMiddlewareAuthentication(s.DeleteUser))).Methods("DELETE")
+	s.Router.HandleFunc("/users/{id}", middlewares.SetMiddlewareAuthentication(s.DeleteUser)).Methods("DELETE")
 
-	// s.Router.HandleFunc("/posts", s.CreatePost).Methods("POST")
-	// s.Router.HandleFunc("/posts", s.GetPosts).Methods("GET")
-	// s.Router.HandleFunc("/posts/{id}", s.GetPost).Methods("GET")
-	// s.Router.HandleFunc("/posts/{id}", s.UpdatePost).Methods("PUT")
-	// s.Router.HandleFunc("/posts/{id}", s.DeletePost).Methods("DELETE")
-
-	// s.Router.Use(middlewares.SetMiddlewareLogger)
-	// s.Router.Use(middlewares.SetMiddlewareJSON)
-	// s.Router.Use(middlewares.SetMiddlewareAuthentication)
-
+	//Posts routes
+	s.Router.HandleFunc("/posts", middlewares.SetMiddlewareJSON(s.CreatePost)).Methods("POST")
+	s.Router.HandleFunc("/posts", middlewares.SetMiddlewareJSON(s.GetPosts)).Methods("GET")
+	s.Router.HandleFunc("/posts/{id}", middlewares.SetMiddlewareJSON(s.GetPost)).Methods("GET")
+	s.Router.HandleFunc("/posts/{id}", middlewares.SetMiddlewareJSON(middlewares.SetMiddlewareAuthentication(s.UpdatePost))).Methods("PUT")
+	s.Router.HandleFunc("/posts/{id}", middlewares.SetMiddlewareAuthentication(s.DeletePost)).Methods("DELETE")
 }
 
 // func (s *Server) authOnly(next http.HandlerFunc) http.HandlerFunc {
