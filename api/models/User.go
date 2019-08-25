@@ -59,10 +59,10 @@ func (u *User) Validate(action string) error {
 		return nil
 	case "login":
 		if u.Password == "" {
-			return errors.New("Password Required")
+			return errors.New("Required Password")
 		}
 		if u.Email == "" {
-			return errors.New("Email Required")
+			return errors.New("Required Email")
 		}
 		if err := checkmail.ValidateFormat(u.Email); err != nil {
 			return errors.New("Invalid Email")
@@ -142,7 +142,7 @@ func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
 		return u, nil
 	}
 	if gorm.IsRecordNotFoundError(err) {
-		return &User{}, errors.New("user not found")
+		return &User{}, errors.New("User Not Found")
 	}
 	return &User{}, err
 }

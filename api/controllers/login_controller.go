@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -15,14 +14,12 @@ import (
 func (server *Server) Login(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("we cant login")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	user := models.User{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		fmt.Println("we cant unmarshal")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
@@ -30,13 +27,11 @@ func (server *Server) Login(w http.ResponseWriter, r *http.Request) {
 	user.Prepare()
 	err = user.Validate("login")
 	if err != nil {
-		fmt.Println("we cant validate")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	token, err := server.SignIn(user.Email, user.Password)
 	if err != nil {
-		fmt.Println("we cant login")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
