@@ -34,13 +34,12 @@ func (server *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 	post.Prepare()
 	err = post.Validate()
 	if err != nil {
-		fmt.Println("Cannot validate")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	uid, err := auth.ExtractTokenID(r)
 	if err != nil {
-		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized or Token contains an invalid number of segments"))
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
 
@@ -52,8 +51,13 @@ func (server *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 	// defer db.Close()
 
 	postCreated, err := post.SavePost(server.DB)
+	// if err != nil {
+	// 	responses.ERROR(w, http.StatusInternalServerError, err)
+	// 	return
+	// }
 	if err != nil {
-		responses.ERROR(w, http.StatusInternalServerError, err)
+		formattedError := formaterror.FormatError(err.Error())
+		responses.ERROR(w, http.StatusInternalServerError, formattedError)
 		return
 	}
 	w.Header().Set("Lacation", fmt.Sprintf("%s%s/%d", r.Host, r.URL.Path, postCreated.ID))

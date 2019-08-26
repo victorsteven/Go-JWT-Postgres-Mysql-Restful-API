@@ -115,13 +115,12 @@ func TestCreatePost(t *testing.T) {
 	if err != nil {
 		log.Fatalf("cannot login: %v\n", err)
 	}
-
 	samples := []struct {
 		inputJSON    string
 		statusCode   int
 		title        string
 		content      string
-		author_id    int
+		author_id    uint32
 		errorMessage string
 	}{
 		{
@@ -129,29 +128,34 @@ func TestCreatePost(t *testing.T) {
 			statusCode:   201,
 			title:        "The title",
 			content:      "the content",
-			author_id:    1,
+			author_id:    user.ID,
 			errorMessage: "",
 		},
-		// {
-		// 	inputJSON:    `{"title":"The title", "content": "the content", "author_id": 1}`,
-		// 	statusCode:   500,
-		// 	errorMessage: "Title Already Taken",
-		// },
-		// {
-		// 	inputJSON:    `{"title": "", "content": "The content", "author_id": 1}`,
-		// 	statusCode:   422,
-		// 	errorMessage: "Required Title",
-		// },
-		// {
-		// 	inputJSON:    `{"title": "This is a title", "content": "", "author_id": 1}`,
-		// 	statusCode:   422,
-		// 	errorMessage: "Required Content",
-		// },
-		// {
-		// 	inputJSON:    `{"title": "This is an awesome title", "content": "the content", "author_id": ""}`,
-		// 	statusCode:   422,
-		// 	errorMessage: "Required Author",
-		// },
+		{
+			inputJSON:    `{"title":"The title", "content": "the content", "author_id": 1}`,
+			statusCode:   500,
+			errorMessage: "Title Already Taken",
+		},
+		{
+			inputJSON:    `{"title": "", "content": "The content", "author_id": 1}`,
+			statusCode:   422,
+			errorMessage: "Required Title",
+		},
+		{
+			inputJSON:    `{"title": "This is a title", "content": "", "author_id": 1}`,
+			statusCode:   422,
+			errorMessage: "Required Content",
+		},
+		{
+			inputJSON:    `{"title": "This is an awesome title", "content": "the content"}`,
+			statusCode:   422,
+			errorMessage: "Required Author",
+		},
+		{
+			inputJSON:    `{"title": "This is an awesome title", "content": "the content", "author_id": 2}`,
+			statusCode:   401,
+			errorMessage: "Unauthorized",
+		},
 	}
 
 	for _, v := range samples {
@@ -161,7 +165,7 @@ func TestCreatePost(t *testing.T) {
 			log.Fatalf("this is the error: %v", err)
 		}
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.CreateUser)
+		handler := http.HandlerFunc(server.CreatePost)
 
 		userTokenString := fmt.Sprintf("Bearer %v", token)
 		req.Header.Set("Authorization", userTokenString)
@@ -176,7 +180,7 @@ func TestCreatePost(t *testing.T) {
 		if v.statusCode == 201 {
 			assert.Equal(t, responseMap["title"], v.title)
 			assert.Equal(t, responseMap["content"], v.content)
-			assert.Equal(t, responseMap["author_id"], v.author_id)
+			assert.Equal(t, responseMap["author_id"], float64(v.author_id))
 		}
 		if v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
 			assert.Equal(t, responseMap["error"], v.errorMessage)
