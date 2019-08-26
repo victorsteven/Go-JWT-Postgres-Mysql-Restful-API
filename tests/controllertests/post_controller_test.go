@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/victorsteven/fullstack/api/models"
 	"gopkg.in/go-playground/assert.v1"
 )
@@ -180,7 +182,7 @@ func TestCreatePost(t *testing.T) {
 		if v.statusCode == 201 {
 			assert.Equal(t, responseMap["title"], v.title)
 			assert.Equal(t, responseMap["content"], v.content)
-			assert.Equal(t, responseMap["author_id"], float64(v.author_id))
+			assert.Equal(t, responseMap["author_id"], float64(v.author_id)) //just for both ids to have the same type
 		}
 		if v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
 			assert.Equal(t, responseMap["error"], v.errorMessage)
@@ -188,79 +190,87 @@ func TestCreatePost(t *testing.T) {
 	}
 }
 
-// func TestGetPosts(t *testing.T) {
+func TestGetPosts(t *testing.T) {
 
-// 	refreshPostTable()
+	err := refreshUserAndPostTable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = seedUsersAndPosts()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-// 	seedPosts()
+	req, err := http.NewRequest("GET", "/posts", nil)
+	if err != nil {
+		log.Fatalf("this is the error: %v\n", err)
+	}
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(server.GetPosts)
+	handler.ServeHTTP(rr, req)
 
-// 	req, err := http.NewRequest("GET", "/users", nil)
-// 	if err != nil {
-// 		log.Fatalf("this is the error: %v\n", err)
-// 	}
-// 	rr := httptest.NewRecorder()
-// 	handler := http.HandlerFunc(server.GetUsers)
-// 	handler.ServeHTTP(rr, req)
+	// defer server.DB.Close()
 
-// 	// defer server.DB.Close()
+	var posts []models.Post
+	err = json.Unmarshal([]byte(rr.Body.String()), &posts)
 
-// 	var users []models.User
-// 	err = json.Unmarshal([]byte(rr.Body.String()), &users)
+	assert.Equal(t, rr.Code, http.StatusOK)
+	assert.Equal(t, len(posts), 2)
+}
 
-// 	assert.Equal(t, rr.Code, http.StatusOK)
-// 	assert.Equal(t, len(users), 2)
-// }
+func TestGetPostByID(t *testing.T) {
 
-// func TestGetPostByID(t *testing.T) {
+	err := refreshUserAndPostTable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	post, err := seedOneUserAndOnePost()
+	if err != nil {
+		log.Fatal(err)
+	}
+	userSample := []struct {
+		id           string
+		statusCode   int
+		title        string
+		content      string
+		author_id    uint32
+		errorMessage string
+	}{
+		{
+			id:         strconv.Itoa(int(post.ID)),
+			statusCode: 200,
+			title:      post.Title,
+			content:    post.Content,
+			author_id:  post.AuthorID,
+		},
+		{
+			id:         "unknwon",
+			statusCode: 400,
+		},
+	}
+	for _, v := range userSample {
 
-// 	refreshPostTable()
+		req, _ := http.NewRequest("GET", "/posts", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": v.id})
 
-// 	user, err := seedOnePost()
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(server.GetPost)
+		handler.ServeHTTP(rr, req)
 
-// 	userSample := []struct {
-// 		id           string
-// 		statusCode   int
-// 		nickname     string
-// 		email        string
-// 		errorMessage string
-// 	}{
-// 		{
-// 			id:         strconv.Itoa(int(user.ID)),
-// 			statusCode: 200,
-// 			nickname:   user.Nickname,
-// 			email:      user.Email,
-// 		},
-// 		{
-// 			id:         "unknwon",
-// 			statusCode: 400,
-// 		},
-// 	}
+		responseMap := make(map[string]interface{})
+		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		if err != nil {
+			fmt.Printf("Cannot convert to json: %v", err)
+		}
+		assert.Equal(t, rr.Code, v.statusCode)
 
-// 	for _, v := range userSample {
-
-// 		req, _ := http.NewRequest("GET", "/users", nil)
-// 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
-
-// 		rr := httptest.NewRecorder()
-// 		handler := http.HandlerFunc(server.GetUser)
-// 		handler.ServeHTTP(rr, req)
-
-// 		responseMap := make(map[string]interface{})
-// 		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
-// 		if err != nil {
-// 			fmt.Printf("Cannot convert to json: %v", err)
-// 		}
-// 		assert.Equal(t, rr.Code, v.statusCode)
-
-// 		if v.statusCode == 200 {
-// 			assert.Equal(t, user.Nickname, responseMap["nickname"])
-// 			assert.Equal(t, user.Email, responseMap["email"])
-// 		}
-// 	}
-// }
+		if v.statusCode == 200 {
+			assert.Equal(t, post.Title, responseMap["title"])
+			assert.Equal(t, post.Content, responseMap["content"])
+			assert.Equal(t, float64(post.AuthorID), responseMap["author_id"]) //the response author id is float64
+		}
+	}
+}
 
 // func TestUpdatePost(t *testing.T) {
 
