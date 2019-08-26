@@ -217,7 +217,6 @@ func TestGetPosts(t *testing.T) {
 	assert.Equal(t, rr.Code, http.StatusOK)
 	assert.Equal(t, len(posts), 2)
 }
-
 func TestGetPostByID(t *testing.T) {
 
 	err := refreshUserAndPostTable()
