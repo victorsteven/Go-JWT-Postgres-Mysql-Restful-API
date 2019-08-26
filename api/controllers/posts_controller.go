@@ -19,18 +19,15 @@ func (server *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("Cannot read")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	post := models.Post{}
 	err = json.Unmarshal(body, &post)
 	if err != nil {
-		fmt.Println("Cannot unmarshal")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-
 	post.Prepare()
 	err = post.Validate()
 	if err != nil {
@@ -42,14 +39,10 @@ func (server *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-
 	if uid != post.AuthorID {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
-
-	// defer db.Close()
-
 	postCreated, err := post.SavePost(server.DB)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
@@ -65,7 +58,6 @@ func (server *Server) GetPosts(w http.ResponseWriter, r *http.Request) {
 	post := models.Post{}
 
 	posts, err := post.FindAllPosts(server.DB)
-
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
@@ -77,7 +69,6 @@ func (server *Server) GetPost(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	pid, err := strconv.ParseUint(vars["id"], 10, 64)
-
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
