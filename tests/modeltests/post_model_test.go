@@ -52,12 +52,12 @@ func seedOneUserAndOnePost() (models.Post, error) {
 	return post, nil
 }
 
-func seedUsersAndPosts() error {
+func seedUsersAndPosts() ([]models.User, []models.Post, error) {
 
 	var err error
 
 	if err != nil {
-		return err
+		return []models.User{}, []models.Post{}, err
 	}
 	var users = []models.User{
 		models.User{
@@ -94,7 +94,7 @@ func seedUsersAndPosts() error {
 			log.Fatalf("cannot seed posts table: %v", err)
 		}
 	}
-	return nil
+	return users, posts, nil
 }
 
 func TestFindAllPosts(t *testing.T) {
@@ -103,7 +103,7 @@ func TestFindAllPosts(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Error refreshing user and post table %v\n", err)
 	}
-	err = seedUsersAndPosts()
+	_, _, err = seedUsersAndPosts()
 	if err != nil {
 		log.Fatalf("Error seeding user and post  table %v\n", err)
 	}

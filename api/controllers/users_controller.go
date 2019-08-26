@@ -108,7 +108,7 @@ func (server *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	tokenID, err := auth.ExtractTokenID(r)
 	if err != nil {
 		// responses.ERROR(w, http.StatusUnauthorized, err)
-		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized or Token contains an invalid number of segments"))
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
 	if tokenID != uint32(uid) {
@@ -148,7 +148,7 @@ func (server *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	tokenID, err := auth.ExtractTokenID(r)
 	if err != nil {
 		// responses.ERROR(w, http.StatusUnauthorized, err)
-		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized or Token contains an invalid number of segments"))
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
 	if tokenID != uint32(uid) {

@@ -58,12 +58,12 @@ func seedOneUserAndOnePost() (models.Post, error) {
 	return post, nil
 }
 
-func seedUsersAndPosts() error {
+func seedUsersAndPosts() ([]models.User, []models.Post, error) {
 
 	var err error
 
 	if err != nil {
-		return err
+		return []models.User{}, []models.Post{}, err
 	}
 	var users = []models.User{
 		models.User{
@@ -100,7 +100,7 @@ func seedUsersAndPosts() error {
 			log.Fatalf("cannot seed posts table: %v", err)
 		}
 	}
-	return nil
+	return users, posts, nil
 }
 
 func TestCreatePost(t *testing.T) {
@@ -117,17 +117,21 @@ func TestCreatePost(t *testing.T) {
 	if err != nil {
 		log.Fatalf("cannot login: %v\n", err)
 	}
+	tokenString := fmt.Sprintf("Bearer %v", token)
+
 	samples := []struct {
 		inputJSON    string
 		statusCode   int
 		title        string
 		content      string
 		author_id    uint32
+		tokenGiven   string
 		errorMessage string
 	}{
 		{
 			inputJSON:    `{"title":"The title", "content": "the content", "author_id": 1}`,
 			statusCode:   201,
+			tokenGiven:   tokenString,
 			title:        "The title",
 			content:      "the content",
 			author_id:    user.ID,
@@ -136,41 +140,59 @@ func TestCreatePost(t *testing.T) {
 		{
 			inputJSON:    `{"title":"The title", "content": "the content", "author_id": 1}`,
 			statusCode:   500,
+			tokenGiven:   tokenString,
 			errorMessage: "Title Already Taken",
+		},
+		{
+			// When no token is passed
+			inputJSON:    `{"title":"When no token is passed", "content": "the content", "author_id": 1}`,
+			statusCode:   401,
+			tokenGiven:   "",
+			errorMessage: "Unauthorized",
+		},
+		{
+			// When incorrect token is passed
+			inputJSON:    `{"title":"When incorrect token is passed", "content": "the content", "author_id": 1}`,
+			statusCode:   401,
+			tokenGiven:   "This is an incorrect token",
+			errorMessage: "Unauthorized",
 		},
 		{
 			inputJSON:    `{"title": "", "content": "The content", "author_id": 1}`,
 			statusCode:   422,
+			tokenGiven:   tokenString,
 			errorMessage: "Required Title",
 		},
 		{
 			inputJSON:    `{"title": "This is a title", "content": "", "author_id": 1}`,
 			statusCode:   422,
+			tokenGiven:   tokenString,
 			errorMessage: "Required Content",
 		},
 		{
 			inputJSON:    `{"title": "This is an awesome title", "content": "the content"}`,
 			statusCode:   422,
+			tokenGiven:   tokenString,
 			errorMessage: "Required Author",
 		},
 		{
+			// When user 2 uses user 1 token
 			inputJSON:    `{"title": "This is an awesome title", "content": "the content", "author_id": 2}`,
 			statusCode:   401,
+			tokenGiven:   tokenString,
 			errorMessage: "Unauthorized",
 		},
 	}
-
 	for _, v := range samples {
 
 		req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.inputJSON))
 		if err != nil {
-			log.Fatalf("this is the error: %v", err)
+			t.Errorf("this is the error: %v\n", err)
 		}
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(server.CreatePost)
 
-		userTokenString := fmt.Sprintf("Bearer %v", token)
-		req.Header.Set("Authorization", userTokenString)
+		req.Header.Set("Authorization", v.tokenGiven)
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
@@ -184,7 +206,7 @@ func TestCreatePost(t *testing.T) {
 			assert.Equal(t, responseMap["content"], v.content)
 			assert.Equal(t, responseMap["author_id"], float64(v.author_id)) //just for both ids to have the same type
 		}
-		if v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
+		if v.statusCode == 401 || v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
 			assert.Equal(t, responseMap["error"], v.errorMessage)
 		}
 	}
@@ -196,14 +218,14 @@ func TestGetPosts(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = seedUsersAndPosts()
+	_, _, err = seedUsersAndPosts()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	req, err := http.NewRequest("GET", "/posts", nil)
 	if err != nil {
-		log.Fatalf("this is the error: %v\n", err)
+		t.Errorf("this is the error: %v\n", err)
 	}
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(server.GetPosts)
@@ -227,7 +249,7 @@ func TestGetPostByID(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	userSample := []struct {
+	postSample := []struct {
 		id           string
 		statusCode   int
 		title        string
@@ -247,9 +269,12 @@ func TestGetPostByID(t *testing.T) {
 			statusCode: 400,
 		},
 	}
-	for _, v := range userSample {
+	for _, v := range postSample {
 
-		req, _ := http.NewRequest("GET", "/posts", nil)
+		req, err := http.NewRequest("GET", "/posts", nil)
+		if err != nil {
+			t.Errorf("this is the error: %v\n", err)
+		}
 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
 
 		rr := httptest.NewRecorder()
@@ -259,7 +284,7 @@ func TestGetPostByID(t *testing.T) {
 		responseMap := make(map[string]interface{})
 		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
 		if err != nil {
-			fmt.Printf("Cannot convert to json: %v", err)
+			log.Fatalf("Cannot convert to json: %v", err)
 		}
 		assert.Equal(t, rr.Code, v.statusCode)
 
@@ -271,137 +296,257 @@ func TestGetPostByID(t *testing.T) {
 	}
 }
 
-// func TestUpdatePost(t *testing.T) {
+func TestUpdatePost(t *testing.T) {
 
-// 	refreshPostTable()
+	var PostUserEmail, PostUserPassword string
+	var AuthPostAuthorID uint32
+	var AuthPostID uint64
 
-// 	seedPosts() //we need atleast two users to properly check the update
+	err := refreshUserAndPostTable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	users, posts, err := seedUsersAndPosts()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Get only the first user
+	for _, user := range users {
+		if user.ID == 2 {
+			continue
+		}
+		PostUserEmail = user.Email
+		PostUserPassword = user.Password
+	}
+	//Login the user and get the authentication token
+	token, err := server.SignIn(PostUserEmail, PostUserPassword)
+	if err != nil {
+		log.Fatalf("cannot login: %v\n", err)
+	}
+	tokenString := fmt.Sprintf("Bearer %v", token)
 
-// 	samples := []struct {
-// 		id           string
-// 		updateJSON   string
-// 		statusCode   int
-// 		nickname     string
-// 		email        string
-// 		errorMessage string
-// 	}{
-// 		{
-// 			id:           strconv.Itoa(int(1)),
-// 			updateJSON:   `{"nickname":"Grand", "email": "grand@gmail.com", "password": "password"}`,
-// 			statusCode:   200,
-// 			nickname:     "Grand",
-// 			email:        "grand@gmail.com",
-// 			errorMessage: "",
-// 		},
-// 		{
-// 			id:           strconv.Itoa(int(1)),
-// 			updateJSON:   `{"nickname":"Frank", "email": "kenny@gmail.com", "password": "password"}`,
-// 			statusCode:   500,
-// 			errorMessage: "Email Already Taken",
-// 		},
-// 		{
-// 			id:           strconv.Itoa(int(1)),
-// 			updateJSON:   `{"nickname":"Kenny Morris", "email": "grand@gmail.com", "password": "password"}`,
-// 			statusCode:   500,
-// 			errorMessage: "Nickname Already Taken",
-// 		},
-// 		{
-// 			id:           strconv.Itoa(int(1)),
-// 			updateJSON:   `{"nickname":"Kan", "email": "kangmail.com", "password": "password"}`,
-// 			statusCode:   422,
-// 			errorMessage: "Invalid Email",
-// 		},
-// 		{
-// 			id:           strconv.Itoa(int(1)),
-// 			updateJSON:   `{"nickname": "", "email": "kan@gmail.com", "password": "password"}`,
-// 			statusCode:   422,
-// 			errorMessage: "Required Nickname",
-// 		},
-// 		{
-// 			id:           strconv.Itoa(int(1)),
-// 			updateJSON:   `{"nickname": "Kan", "email": "", "password": "password"}`,
-// 			statusCode:   422,
-// 			errorMessage: "Required Email",
-// 		},
-// 		{
-// 			id:         "unknwon",
-// 			statusCode: 400,
-// 		},
-// 		{
-// 			id:         strconv.Itoa(int(2)),
-// 			updateJSON: `{"nickname": "Mike", "email": "mike@gmail.com", "password": "password"}`,
-// 			statusCode: 401,
-// 		},
-// 	}
+	// Get only the first post
+	for _, post := range posts {
+		if post.ID == 2 {
+			continue
+		}
+		AuthPostID = post.ID
+		AuthPostAuthorID = post.AuthorID
+	}
+	// fmt.Printf("this is the auth post: %v\n", AuthPostID)
 
-// 	for _, v := range samples {
+	samples := []struct {
+		id           string
+		updateJSON   string
+		statusCode   int
+		title        string
+		content      string
+		author_id    uint32
+		tokenGiven   string
+		errorMessage string
+	}{
+		{
+			// Convert int64 to int first before converting to string
+			id:           strconv.Itoa(int(AuthPostID)),
+			updateJSON:   `{"title":"The updated post", "content": "This is the updated content", "author_id": 1}`,
+			statusCode:   200,
+			title:        "The updated post",
+			content:      "This is the updated content",
+			author_id:    AuthPostAuthorID,
+			tokenGiven:   tokenString,
+			errorMessage: "",
+		},
+		{
+			// When no token is provided
+			id:           strconv.Itoa(int(AuthPostID)),
+			updateJSON:   `{"title":"This is still another title", "content": "This is the updated content", "author_id": 1}`,
+			tokenGiven:   "",
+			statusCode:   401,
+			errorMessage: "Unauthorized",
+		},
+		{
+			// When incorrect token is provided
+			id:           strconv.Itoa(int(AuthPostID)),
+			updateJSON:   `{"title":"This is still another title", "content": "This is the updated content", "author_id": 1}`,
+			tokenGiven:   "this is an incorrect token",
+			statusCode:   401,
+			errorMessage: "Unauthorized",
+		},
+		{
+			//Note: "Title 2" belongs to post 2, and title must be unique
+			id:           strconv.Itoa(int(AuthPostID)),
+			updateJSON:   `{"title":"Title 2", "content": "This is the updated content", "author_id": 1}`,
+			statusCode:   500,
+			tokenGiven:   tokenString,
+			errorMessage: "Title Already Taken",
+		},
+		{
+			id:           strconv.Itoa(int(AuthPostID)),
+			updateJSON:   `{"title":"", "content": "This is the updated content", "author_id": 1}`,
+			statusCode:   422,
+			tokenGiven:   tokenString,
+			errorMessage: "Required Title",
+		},
+		{
+			id:           strconv.Itoa(int(AuthPostID)),
+			updateJSON:   `{"title":"Awesome title", "content": "", "author_id": 1}`,
+			statusCode:   422,
+			tokenGiven:   tokenString,
+			errorMessage: "Required Content",
+		},
+		{
+			id:           strconv.Itoa(int(AuthPostID)),
+			updateJSON:   `{"title":"This is another title", "content": "This is the updated content"}`,
+			statusCode:   422,
+			tokenGiven:   tokenString,
+			errorMessage: "Required Author",
+		},
+		{
+			id:         "unknwon",
+			statusCode: 400,
+		},
+		{
+			id:           strconv.Itoa(int(AuthPostID)),
+			updateJSON:   `{"title":"This is still another title", "content": "This is the updated content", "author_id": 2}`,
+			tokenGiven:   tokenString,
+			statusCode:   401,
+			errorMessage: "Unauthorized",
+		},
+	}
 
-// 		req, _ := http.NewRequest("POST", "/users", bytes.NewBufferString(v.updateJSON))
+	for _, v := range samples {
 
-// 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.updateJSON))
+		if err != nil {
+			t.Errorf("this is the error: %v\n", err)
+		}
+		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(server.UpdatePost)
 
-// 		rr := httptest.NewRecorder()
-// 		handler := http.HandlerFunc(server.UpdateUser)
+		req.Header.Set("Authorization", v.tokenGiven)
 
-// 		req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE1NjY2ODk5MjEsInVzZXJfaWQiOjF9.4CIgrndIbgUQELh6N2-y-w-pPTJRsHIoxnNY-izg7Kc")
+		handler.ServeHTTP(rr, req)
 
-// 		handler.ServeHTTP(rr, req)
+		responseMap := make(map[string]interface{})
+		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		if err != nil {
+			t.Errorf("Cannot convert to json: %v", err)
+		}
+		assert.Equal(t, rr.Code, v.statusCode)
+		if v.statusCode == 200 {
+			assert.Equal(t, responseMap["title"], v.title)
+			assert.Equal(t, responseMap["content"], v.content)
+			assert.Equal(t, responseMap["author_id"], float64(v.author_id)) //just to match the type of the json we receive thats why we used float64
+		}
+		if v.statusCode == 401 || v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
+			assert.Equal(t, responseMap["error"], v.errorMessage)
+		}
+	}
+}
 
-// 		responseMap := make(map[string]interface{})
-// 		err := json.Unmarshal([]byte(rr.Body.String()), &responseMap)
-// 		if err != nil {
-// 			fmt.Printf("Cannot convert to json: %v", err)
-// 		}
-// 		assert.Equal(t, rr.Code, v.statusCode)
-// 		if v.statusCode == 200 {
-// 			assert.Equal(t, responseMap["nickname"], v.nickname)
-// 			assert.Equal(t, responseMap["email"], v.email)
-// 		}
-// 		if v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
-// 			assert.Equal(t, responseMap["error"], v.errorMessage)
-// 		}
-// 	}
-// }
+func TestDeletePost(t *testing.T) {
 
-// func TestDeletePost(t *testing.T) {
+	var PostUserEmail, PostUserPassword string
+	var PostUserID uint32
+	var AuthPostID uint64
 
-// 	refreshPostTable()
+	err := refreshUserAndPostTable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	users, posts, err := seedUsersAndPosts()
+	if err != nil {
+		log.Fatal(err)
+	}
+	//Let's get only the Second user
+	for _, user := range users {
+		if user.ID == 1 {
+			continue
+		}
+		PostUserEmail = user.Email
+		PostUserPassword = user.Password
+	}
+	//Login the user and get the authentication token
+	token, err := server.SignIn(PostUserEmail, PostUserPassword)
+	if err != nil {
+		log.Fatalf("cannot login: %v\n", err)
+	}
+	tokenString := fmt.Sprintf("Bearer %v", token)
 
-// 	seedPosts()
+	// Get only the second post
+	for _, post := range posts {
+		if post.ID == 1 {
+			continue
+		}
+		AuthPostID = post.ID
+		PostUserID = post.AuthorID
+	}
+	postSample := []struct {
+		id           string
+		author_id    uint32
+		tokenGiven   string
+		statusCode   int
+		errorMessage string
+	}{
+		{
+			// Convert int64 to int first before converting to string
+			id:           strconv.Itoa(int(AuthPostID)),
+			author_id:    PostUserID,
+			tokenGiven:   tokenString,
+			statusCode:   204,
+			errorMessage: "",
+		},
+		{
+			// When empty token is passed
+			id:           strconv.Itoa(int(AuthPostID)),
+			author_id:    PostUserID,
+			tokenGiven:   "",
+			statusCode:   401,
+			errorMessage: "Unauthorized",
+		},
+		{
+			// When incorrect token is passed
+			id:           strconv.Itoa(int(AuthPostID)),
+			author_id:    PostUserID,
+			tokenGiven:   "This is an incorrect token",
+			statusCode:   401,
+			errorMessage: "Unauthorized",
+		},
+		{
+			id:         "unknwon",
+			tokenGiven: tokenString,
+			statusCode: 400,
+		},
+		{
+			id:           strconv.Itoa(int(1)),
+			author_id:    1,
+			statusCode:   401,
+			errorMessage: "Unauthorized",
+		},
+	}
+	for _, v := range postSample {
 
-// 	userSample := []struct {
-// 		id           string
-// 		statusCode   int
-// 		nickname     string
-// 		email        string
-// 		errorMessage string
-// 	}{
-// 		{
-// 			id:         strconv.Itoa(int(1)),
-// 			statusCode: 204,
-// 		},
-// 		{
-// 			id:         "unknwon",
-// 			statusCode: 400,
-// 		},
-// 		{
-// 			id:         strconv.Itoa(int(2)),
-// 			statusCode: 401,
-// 		},
-// 	}
+		req, _ := http.NewRequest("GET", "/posts", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": v.id})
 
-// 	for _, v := range userSample {
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(server.DeletePost)
 
-// 		req, _ := http.NewRequest("GET", "/users", nil)
-// 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		req.Header.Set("Authorization", v.tokenGiven)
 
-// 		rr := httptest.NewRecorder()
-// 		handler := http.HandlerFunc(server.DeleteUser)
+		handler.ServeHTTP(rr, req)
 
-// 		req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE1NjY2ODk5MjEsInVzZXJfaWQiOjF9.4CIgrndIbgUQELh6N2-y-w-pPTJRsHIoxnNY-izg7Kc")
+		assert.Equal(t, rr.Code, v.statusCode)
 
-// 		handler.ServeHTTP(rr, req)
+		if v.statusCode == 401 && v.errorMessage != "" {
 
-// 		assert.Equal(t, rr.Code, v.statusCode)
-// 	}
-// }
+			responseMap := make(map[string]interface{})
+			err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+			if err != nil {
+				t.Errorf("Cannot convert to json: %v", err)
+			}
+			assert.Equal(t, responseMap["error"], v.errorMessage)
+		}
+	}
+}

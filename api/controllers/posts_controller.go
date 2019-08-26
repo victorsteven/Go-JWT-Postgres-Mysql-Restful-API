@@ -51,10 +51,6 @@ func (server *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 	// defer db.Close()
 
 	postCreated, err := post.SavePost(server.DB)
-	// if err != nil {
-	// 	responses.ERROR(w, http.StatusInternalServerError, err)
-	// 	return
-	// }
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		responses.ERROR(w, http.StatusInternalServerError, formattedError)
@@ -123,7 +119,7 @@ func (server *Server) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 	uid, err := auth.ExtractTokenID(r)
 	if err != nil {
-		responses.ERROR(w, http.StatusUnauthorized, err)
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
 	if uid != post.AuthorID {
@@ -153,7 +149,7 @@ func (server *Server) DeletePost(w http.ResponseWriter, r *http.Request) {
 	}
 	uid, err := auth.ExtractTokenID(r)
 	if err != nil {
-		responses.ERROR(w, http.StatusUnauthorized, err)
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
 	_, err = post.DeleteAPost(server.DB, pid, uid)
