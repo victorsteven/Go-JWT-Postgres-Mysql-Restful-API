@@ -19,12 +19,14 @@ func (server *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		fmt.Println("Cannot read")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	post := models.Post{}
 	err = json.Unmarshal(body, &post)
 	if err != nil {
+		fmt.Println("Cannot unmarshal")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
@@ -32,6 +34,7 @@ func (server *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 	post.Prepare()
 	err = post.Validate()
 	if err != nil {
+		fmt.Println("Cannot validate")
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}

@@ -1,138 +1,188 @@
 package controllertests
 
-// "strconv"
-// "reflect"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-// func refreshPostTable() error {
-// 	err := server.DB.Debug().DropTableIfExists(&models.User{}).Error
-// 	if err != nil {
-// 		return err
-// 	}
-// 	err = server.DB.Debug().AutoMigrate(&models.User{}).Error
-// 	if err != nil {
-// 		return err
-// 	}
-// 	log.Printf("Successfully refreshed table")
-// 	return nil
-// }
+	"github.com/victorsteven/fullstack/api/models"
+	"gopkg.in/go-playground/assert.v1"
+)
 
-// func seedOnePost() (models.User, error) {
+var postInstance = models.Post{}
 
-// 	refreshPostTable()
+func refreshUserAndPostTable() error {
 
-// 	user := models.User{
-// 		Nickname: "Pet",
-// 		Email:    "pet@gmail.com",
-// 		Password: "password",
-// 	}
+	err := server.DB.Debug().DropTableIfExists(&models.User{}, &models.Post{}).Error
+	if err != nil {
+		return err
+	}
+	err = server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}).Error
+	if err != nil {
+		return err
+	}
+	log.Printf("Successfully refreshed tables")
+	return nil
+}
 
-// 	err := server.DB.Debug().Model(&models.User{}).Create(&user).Error
-// 	if err != nil {
-// 		log.Fatalf("cannot seed users table: %v", err)
-// 	}
-// 	return user, nil
-// }
+func seedOneUserAndOnePost() (models.Post, error) {
 
-// func seedPosts() {
+	err := refreshUserAndPostTable()
+	if err != nil {
+		return models.Post{}, err
+	}
+	user := models.User{
+		Nickname: "Sam Phil",
+		Email:    "sam@gmail.com",
+		Password: "password",
+	}
+	err = server.DB.Debug().Model(&models.User{}).Create(&user).Error
+	if err != nil {
+		return models.Post{}, err
+	}
+	post := models.Post{
+		Title:    "This is the title sam",
+		Content:  "This is the content sam",
+		AuthorID: user.ID,
+	}
+	err = server.DB.Debug().Model(&models.Post{}).Create(&post).Error
+	if err != nil {
+		return models.Post{}, err
+	}
+	return post, nil
+}
 
-// 	users := []models.User{
-// 		models.User{
-// 			Nickname: "Steven victor",
-// 			Email:    "steven@gmail.com",
-// 			Password: "password",
-// 		},
-// 		models.User{
-// 			Nickname: "Kenny Morris",
-// 			Email:    "kenny@gmail.com",
-// 			Password: "password",
-// 		},
-// 	}
+func seedUsersAndPosts() error {
 
-// 	for i, _ := range users {
-// 		err := server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
-// 		if err != nil {
-// 			log.Fatalf("cannot seed users table: %v", err)
-// 		}
-// 	}
-// }
+	var err error
 
-// func TestCreatePost(t *testing.T) {
+	if err != nil {
+		return err
+	}
+	var users = []models.User{
+		models.User{
+			Nickname: "Steven victor",
+			Email:    "steven@gmail.com",
+			Password: "password",
+		},
+		models.User{
+			Nickname: "Magu Frank",
+			Email:    "magu@gmail.com",
+			Password: "password",
+		},
+	}
+	var posts = []models.Post{
+		models.Post{
+			Title:   "Title 1",
+			Content: "Hello world 1",
+		},
+		models.Post{
+			Title:   "Title 2",
+			Content: "Hello world 2",
+		},
+	}
 
-// 	refreshPostTable()
+	for i, _ := range users {
+		err = server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
+		if err != nil {
+			log.Fatalf("cannot seed users table: %v", err)
+		}
+		posts[i].AuthorID = users[i].ID
 
-// 	samples := []struct {
-// 		inputJSON    string
-// 		statusCode   int
-// 		nickname     string
-// 		email        string
-// 		errorMessage string
-// 	}{
-// 		{
-// 			inputJSON:    `{"nickname":"Pet", "email": "pet@gmail.com", "password": "password"}`,
-// 			statusCode:   201,
-// 			nickname:     "Pet",
-// 			email:        "pet@gmail.com",
-// 			errorMessage: "",
-// 		},
-// 		{
-// 			inputJSON:    `{"nickname":"Frank", "email": "pet@gmail.com", "password": "password"}`,
-// 			statusCode:   500,
-// 			errorMessage: "Email Already Taken",
-// 		},
-// 		{
-// 			inputJSON:    `{"nickname":"Pet", "email": "grand@gmail.com", "password": "password"}`,
-// 			statusCode:   500,
-// 			errorMessage: "Nickname Already Taken",
-// 		},
-// 		{
-// 			inputJSON:    `{"nickname":"Kan", "email": "kangmail.com", "password": "password"}`,
-// 			statusCode:   422,
-// 			errorMessage: "Invalid Email",
-// 		},
-// 		{
-// 			inputJSON:    `{"nickname": "", "email": "kan@gmail.com", "password": "password"}`,
-// 			statusCode:   422,
-// 			errorMessage: "Required Nickname",
-// 		},
-// 		{
-// 			inputJSON:    `{"nickname": "Kan", "email": "", "password": "password"}`,
-// 			statusCode:   422,
-// 			errorMessage: "Required Email",
-// 		},
-// 		{
-// 			inputJSON:    `{"nickname": "Kan", "email": "kan@gmail.com", "password": ""}`,
-// 			statusCode:   422,
-// 			errorMessage: "Required Password",
-// 		},
-// 	}
+		err = server.DB.Debug().Model(&models.Post{}).Create(&posts[i]).Error
+		if err != nil {
+			log.Fatalf("cannot seed posts table: %v", err)
+		}
+	}
+	return nil
+}
 
-// 	for _, v := range samples {
+func TestCreatePost(t *testing.T) {
 
-// 		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(v.inputJSON))
-// 		if err != nil {
-// 			log.Fatalf("this is the error: %v", err)
-// 		}
-// 		rr := httptest.NewRecorder()
-// 		handler := http.HandlerFunc(server.CreateUser)
-// 		handler.ServeHTTP(rr, req)
+	err := refreshUserAndPostTable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	user, err := seedOneUser()
+	if err != nil {
+		log.Fatalf("Cannot seed user %v\n", err)
+	}
+	token, err := server.SignIn(user.Email, user.Password)
+	if err != nil {
+		log.Fatalf("cannot login: %v\n", err)
+	}
 
-// 		// fmt.Printf("This is the response payload: %v", rr.Body)
+	samples := []struct {
+		inputJSON    string
+		statusCode   int
+		title        string
+		content      string
+		author_id    int
+		errorMessage string
+	}{
+		{
+			inputJSON:    `{"title":"The title", "content": "the content", "author_id": 1}`,
+			statusCode:   201,
+			title:        "The title",
+			content:      "the content",
+			author_id:    1,
+			errorMessage: "",
+		},
+		// {
+		// 	inputJSON:    `{"title":"The title", "content": "the content", "author_id": 1}`,
+		// 	statusCode:   500,
+		// 	errorMessage: "Title Already Taken",
+		// },
+		// {
+		// 	inputJSON:    `{"title": "", "content": "The content", "author_id": 1}`,
+		// 	statusCode:   422,
+		// 	errorMessage: "Required Title",
+		// },
+		// {
+		// 	inputJSON:    `{"title": "This is a title", "content": "", "author_id": 1}`,
+		// 	statusCode:   422,
+		// 	errorMessage: "Required Content",
+		// },
+		// {
+		// 	inputJSON:    `{"title": "This is an awesome title", "content": "the content", "author_id": ""}`,
+		// 	statusCode:   422,
+		// 	errorMessage: "Required Author",
+		// },
+	}
 
-// 		responseMap := make(map[string]interface{})
-// 		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
-// 		if err != nil {
-// 			fmt.Printf("Cannot convert to json: %v", err)
-// 		}
-// 		assert.Equal(t, rr.Code, v.statusCode)
-// 		if v.statusCode == 201 {
-// 			assert.Equal(t, responseMap["nickname"], v.nickname)
-// 			assert.Equal(t, responseMap["email"], v.email)
-// 		}
-// 		if v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
-// 			assert.Equal(t, responseMap["error"], v.errorMessage)
-// 		}
-// 	}
-// }
+	for _, v := range samples {
+
+		req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.inputJSON))
+		if err != nil {
+			log.Fatalf("this is the error: %v", err)
+		}
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(server.CreateUser)
+
+		userTokenString := fmt.Sprintf("Bearer %v", token)
+		req.Header.Set("Authorization", userTokenString)
+		handler.ServeHTTP(rr, req)
+
+		responseMap := make(map[string]interface{})
+		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		if err != nil {
+			fmt.Printf("Cannot convert to json: %v", err)
+		}
+		assert.Equal(t, rr.Code, v.statusCode)
+		if v.statusCode == 201 {
+			assert.Equal(t, responseMap["title"], v.title)
+			assert.Equal(t, responseMap["content"], v.content)
+			assert.Equal(t, responseMap["author_id"], v.author_id)
+		}
+		if v.statusCode == 422 || v.statusCode == 500 && v.errorMessage != "" {
+			assert.Equal(t, responseMap["error"], v.errorMessage)
+		}
+	}
+}
 
 // func TestGetPosts(t *testing.T) {
 

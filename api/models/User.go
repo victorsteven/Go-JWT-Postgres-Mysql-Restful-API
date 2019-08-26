@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"html"
 	"strings"
 	"time"
@@ -148,7 +147,6 @@ func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
 }
 
 func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
-	fmt.Printf("this is the id to update: %v", uid)
 	done := make(chan bool)
 	go func(ch chan<- bool) {
 		defer close(ch)

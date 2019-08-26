@@ -30,14 +30,15 @@ func (p *Post) Prepare() {
 }
 
 func (p *Post) Validate() error {
+
 	if p.Title == "" {
-		return errors.New("Title required")
+		return errors.New("Required Title")
 	}
 	if p.Content == "" {
-		return errors.New("Content required")
+		return errors.New("Required Content")
 	}
 	if p.AuthorID < 1 {
-		return errors.New("Author required")
+		return errors.New("Required Author")
 	}
 	return nil
 }

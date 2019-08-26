@@ -1,47 +1,19 @@
-package tests
+package modeltests
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"testing"
 
 	// _ "github.com/go-sql-driver/mysql"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"github.com/joho/godotenv"
-	"github.com/victorsteven/fullstack/api/controllers"
 	"github.com/victorsteven/fullstack/api/models"
 	"gopkg.in/go-playground/assert.v1"
 )
 
-var server = controllers.Server{}
-
 var userInstance = models.User{}
 
-func TestMain(t *testing.T) {
-	var err error
-	err = godotenv.Load(os.ExpandEnv("../../.env"))
-	if err != nil {
-		log.Fatalf("Error getting env %v\n", err)
-	}
-	TestDbHost := os.Getenv("TEST_DATABASE_HOST")
-
-	if TestDbHost == "" {
-		TestDbHost = "127.0.0.1"
-	}
-	TestDbDriver := os.Getenv("TestDbDriver")
-	TestDbURL := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8&parseTime=True&loc=Local", os.Getenv("TestDbUser"), os.Getenv("TestDbPassword"), TestDbHost, os.Getenv("TestDbName"))
-	server.DB, err = gorm.Open(TestDbDriver, TestDbURL)
-	if err != nil {
-		log.Printf("Error connecting to the database: %v\n", err)
-		return
-	}
-	fmt.Println("We have connected to the database")
-}
-
-func refreshTable() error {
+func refreshUserTable() error {
 	err := server.DB.Debug().DropTableIfExists(&models.User{}).Error
 	if err != nil {
 		return err
@@ -54,13 +26,13 @@ func refreshTable() error {
 	return nil
 }
 
-func seedOneUser() models.User {
+func seedOneUser() (models.User, error) {
 
-	refreshTable()
+	refreshUserTable()
 
 	user := models.User{
-		Nickname: "Kenny Morris",
-		Email:    "kenny@gmail.com",
+		Nickname: "Pet",
+		Email:    "pet@gmail.com",
 		Password: "password",
 	}
 
@@ -68,7 +40,7 @@ func seedOneUser() models.User {
 	if err != nil {
 		log.Fatalf("cannot seed users table: %v", err)
 	}
-	return user
+	return user, nil
 }
 
 func seedUsers() {
@@ -96,13 +68,13 @@ func seedUsers() {
 
 func TestFindAllUsers(t *testing.T) {
 
-	refreshTable()
+	refreshUserTable()
 
 	seedUsers()
 
 	users, err := userInstance.FindAllUsers(server.DB)
 	if err != nil {
-		fmt.Printf("this is the error getting the users: %v\n", err)
+		t.Errorf("this is the error getting the users: %v\n", err)
 		return
 	}
 	assert.Equal(t, len(*users), 2)
@@ -110,7 +82,7 @@ func TestFindAllUsers(t *testing.T) {
 
 func TestSaveUser(t *testing.T) {
 
-	refreshTable()
+	refreshUserTable()
 
 	newUser := models.User{
 		ID:       1,
@@ -120,7 +92,7 @@ func TestSaveUser(t *testing.T) {
 	}
 	savedUser, err := newUser.SaveUser(server.DB)
 	if err != nil {
-		fmt.Printf("this is the error getting the users: %v\n", err)
+		t.Errorf("this is the error getting the users: %v\n", err)
 		return
 	}
 	assert.Equal(t, newUser.ID, savedUser.ID)
@@ -130,17 +102,15 @@ func TestSaveUser(t *testing.T) {
 
 func TestGetUserByID(t *testing.T) {
 
-	refreshTable()
+	refreshUserTable()
 
-	user := models.User{
-		ID:       1,
-		Nickname: "modi",
-		Email:    "modi@gmail.com",
-		Password: "password",
+	user, err := seedOneUser()
+	if err != nil {
+		log.Fatalf("cannot seed users table: %v", err)
 	}
 	foundUser, err := userInstance.FindUserByID(server.DB, user.ID)
 	if err != nil {
-		fmt.Printf("this is the error getting one user: %v\n", err)
+		t.Errorf("this is the error getting one user: %v\n", err)
 		return
 	}
 	assert.Equal(t, foundUser.ID, user.ID)
@@ -150,9 +120,12 @@ func TestGetUserByID(t *testing.T) {
 
 func TestUpdateAUser(t *testing.T) {
 
-	refreshTable()
+	refreshUserTable()
 
-	user := seedOneUser()
+	user, err := seedOneUser()
+	if err != nil {
+		log.Fatalf("Cannot seed user: %v\n", err)
+	}
 
 	userUpdate := models.User{
 		ID:       1,
@@ -162,7 +135,7 @@ func TestUpdateAUser(t *testing.T) {
 	}
 	updatedUser, err := userUpdate.UpdateAUser(server.DB, user.ID)
 	if err != nil {
-		fmt.Printf("this is the error updating the user: %v\n", err)
+		t.Errorf("this is the error updating the user: %v\n", err)
 		return
 	}
 	assert.Equal(t, updatedUser.ID, userUpdate.ID)
@@ -173,13 +146,17 @@ func TestUpdateAUser(t *testing.T) {
 
 func TestDeleteAUser(t *testing.T) {
 
-	refreshTable()
+	refreshUserTable()
 
-	user := seedOneUser()
+	user, err := seedOneUser()
+
+	if err != nil {
+		log.Fatalf("Cannot seed user: %v\n", err)
+	}
 
 	isDeleted, err := userInstance.DeleteAUser(server.DB, user.ID)
 	if err != nil {
-		fmt.Printf("this is the error updating the user: %v\n", err)
+		t.Errorf("this is the error updating the user: %v\n", err)
 		return
 	}
 	// assert.Equal(t, int(isDeleted), 1) //one shows that the record has been deleted or:
