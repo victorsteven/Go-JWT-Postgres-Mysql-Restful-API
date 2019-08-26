@@ -3,7 +3,7 @@ package seed
 import (
 	"log"
 
-	"github.com/victorsteven/fullstack/api/database"
+	"github.com/jinzhu/gorm"
 	"github.com/victorsteven/fullstack/api/models"
 )
 
@@ -14,28 +14,26 @@ var users = []models.User{
 		Password: "password",
 	},
 	models.User{
-		Nickname: "Steven victor",
-		Email:    "steven@gmail.com",
+		Nickname: "Martin Luther",
+		Email:    "luther@gmail.com",
 		Password: "password",
 	},
 }
 
 var posts = []models.Post{
 	models.Post{
-		Title:   "Title",
-		Content: "Hello world",
+		Title:   "Title 1",
+		Content: "Hello world 1",
+	},
+	models.Post{
+		Title:   "Title 2",
+		Content: "Hello world 2",
 	},
 }
 
-func Load() {
-	db, err := database.Connect()
+func Load(db *gorm.DB) {
 
-	if err != nil {
-		log.Fatalf("cannot connect to the database: %v", err)
-	}
-	defer db.Close()
-
-	err = db.Debug().DropTableIfExists(&models.Post{}, &models.User{}).Error
+	err := db.Debug().DropTableIfExists(&models.Post{}, &models.User{}).Error
 	if err != nil {
 		log.Fatalf("cannot drop table: %v", err)
 	}
@@ -54,7 +52,6 @@ func Load() {
 		if err != nil {
 			log.Fatalf("cannot seed users table: %v", err)
 		}
-
 		posts[i].AuthorID = users[i].ID
 
 		err = db.Debug().Model(&models.Post{}).Create(&posts[i]).Error
