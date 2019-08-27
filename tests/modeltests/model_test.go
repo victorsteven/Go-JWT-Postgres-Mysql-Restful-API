@@ -54,11 +54,11 @@ func Database() {
 }
 
 func refreshUserTable() error {
-	err := server.DB.Debug().DropTableIfExists(&models.User{}).Error
+	err := server.DB.DropTableIfExists(&models.User{}).Error
 	if err != nil {
 		return err
 	}
-	err = server.DB.Debug().AutoMigrate(&models.User{}).Error
+	err = server.DB.AutoMigrate(&models.User{}).Error
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func seedOneUser() (models.User, error) {
 		Password: "password",
 	}
 
-	err := server.DB.Debug().Model(&models.User{}).Create(&user).Error
+	err := server.DB.Model(&models.User{}).Create(&user).Error
 	if err != nil {
 		log.Fatalf("cannot seed users table: %v", err)
 	}
@@ -99,7 +99,7 @@ func seedUsers() {
 	}
 
 	for i, _ := range users {
-		err := server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
+		err := server.DB.Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed users table: %v", err)
 		}
@@ -108,11 +108,11 @@ func seedUsers() {
 
 func refreshUserAndPostTable() error {
 
-	err := server.DB.Debug().DropTableIfExists(&models.User{}, &models.Post{}).Error
+	err := server.DB.DropTableIfExists(&models.User{}, &models.Post{}).Error
 	if err != nil {
 		return err
 	}
-	err = server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}).Error
+	err = server.DB.AutoMigrate(&models.User{}, &models.Post{}).Error
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func seedOneUserAndOnePost() (models.Post, error) {
 		Email:    "sam@gmail.com",
 		Password: "password",
 	}
-	err = server.DB.Debug().Model(&models.User{}).Create(&user).Error
+	err = server.DB.Model(&models.User{}).Create(&user).Error
 	if err != nil {
 		return models.Post{}, err
 	}
@@ -140,7 +140,7 @@ func seedOneUserAndOnePost() (models.Post, error) {
 		Content:  "This is the content sam",
 		AuthorID: user.ID,
 	}
-	err = server.DB.Debug().Model(&models.Post{}).Create(&post).Error
+	err = server.DB.Model(&models.Post{}).Create(&post).Error
 	if err != nil {
 		return models.Post{}, err
 	}
@@ -178,13 +178,13 @@ func seedUsersAndPosts() ([]models.User, []models.Post, error) {
 	}
 
 	for i, _ := range users {
-		err = server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
+		err = server.DB.Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed users table: %v", err)
 		}
 		posts[i].AuthorID = users[i].ID
 
-		err = server.DB.Debug().Model(&models.Post{}).Create(&posts[i]).Error
+		err = server.DB.Model(&models.Post{}).Create(&posts[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed posts table: %v", err)
 		}
