@@ -223,6 +223,14 @@ func TestUpdateUser(t *testing.T) {
 			errorMessage:   "",
 		},
 		{
+			// When password field is empty
+			id:           strconv.Itoa(int(AuthID)),
+			updateJSON:   `{"nickname":"Woman", "email": "woman@gmail.com", "password": ""}`,
+			statusCode:   422,
+			tokenGiven:   tokenString,
+			errorMessage: "Required Password",
+		},
+		{
 			// When no token was passed
 			id:           strconv.Itoa(int(AuthID)),
 			updateJSON:   `{"nickname":"Man", "email": "man@gmail.com", "password": "password"}`,
@@ -308,7 +316,7 @@ func TestUpdateUser(t *testing.T) {
 		responseMap := make(map[string]interface{})
 		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
 		if err != nil {
-			fmt.Printf("Cannot convert to json: %v", err)
+			t.Errorf("Cannot convert to json: %v", err)
 		}
 		assert.Equal(t, rr.Code, v.statusCode)
 		if v.statusCode == 200 {

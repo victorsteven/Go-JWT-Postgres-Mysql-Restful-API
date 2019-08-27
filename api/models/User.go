@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"html"
+	"log"
 	"strings"
 	"time"
 
@@ -38,6 +39,15 @@ func (u *User) BeforeSave() error {
 	return nil
 }
 
+// func (u *User) BeforeUpdate() (err error) {
+// 	hashedPassword, err := Hash(u.Password)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	u.Password = string(hashedPassword)
+// 	return nil
+// }
+
 func (u *User) Prepare() {
 	u.ID = 0
 	u.Nickname = html.EscapeString(strings.TrimSpace(u.Nickname))
@@ -52,9 +62,9 @@ func (u *User) Validate(action string) error {
 		if u.Nickname == "" {
 			return errors.New("Required Nickname")
 		}
-		// if u.Password == "" {
-		// 	return errors.New("Required Password")
-		// }
+		if u.Password == "" {
+			return errors.New("Required Password")
+		}
 		if u.Email == "" {
 			return errors.New("Required Email")
 		}
@@ -154,11 +164,19 @@ func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
 }
 
 func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
+
+	// TO hash the password
+	err := u.BeforeSave()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	done := make(chan bool)
 	go func(ch chan<- bool) {
 		defer close(ch)
 		db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).UpdateColumns(
 			map[string]interface{}{
+				"password":  u.Password,
 				"nickname":  u.Nickname,
 				"email":     u.Email,
 				"update_at": time.Now(),
