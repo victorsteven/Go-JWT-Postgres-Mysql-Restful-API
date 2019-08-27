@@ -8,18 +8,12 @@ import (
 	"net/http"
 	"strconv"
 
-	// "reflect"
-
 	"github.com/gorilla/mux"
 	"github.com/victorsteven/fullstack/api/auth"
 	"github.com/victorsteven/fullstack/api/models"
 	"github.com/victorsteven/fullstack/api/responses"
 	"github.com/victorsteven/fullstack/api/utils/formaterror"
 )
-
-func (server *Server) Home(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "this is me")
-}
 
 func (server *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 

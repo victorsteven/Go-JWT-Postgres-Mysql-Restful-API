@@ -119,6 +119,9 @@ func TestDeleteAPost(t *testing.T) {
 		t.Errorf("this is the error updating the user: %v\n", err)
 		return
 	}
-	// assert.Equal(t, int(isDeleted), 1) //one shows that the record has been deleted or:
-	assert.Equal(t, isDeleted, int64(1)) //one shows that the record has been deleted
+	//one shows that the record has been deleted or:
+	// assert.Equal(t, int(isDeleted), 1)
+
+	//Can be done this way too
+	assert.Equal(t, isDeleted, int64(1))
 }

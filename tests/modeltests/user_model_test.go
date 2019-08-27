@@ -12,9 +12,15 @@ import (
 
 func TestFindAllUsers(t *testing.T) {
 
-	refreshUserTable()
+	err := refreshUserTable()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	seedUsers()
+	err = seedUsers()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	users, err := userInstance.FindAllUsers(server.DB)
 	if err != nil {
@@ -26,8 +32,10 @@ func TestFindAllUsers(t *testing.T) {
 
 func TestSaveUser(t *testing.T) {
 
-	refreshUserTable()
-
+	err := refreshUserTable()
+	if err != nil {
+		log.Fatal(err)
+	}
 	newUser := models.User{
 		ID:       1,
 		Email:    "test@gmail.com",
@@ -46,7 +54,10 @@ func TestSaveUser(t *testing.T) {
 
 func TestGetUserByID(t *testing.T) {
 
-	refreshUserTable()
+	err := refreshUserTable()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	user, err := seedOneUser()
 	if err != nil {
@@ -64,7 +75,10 @@ func TestGetUserByID(t *testing.T) {
 
 func TestUpdateAUser(t *testing.T) {
 
-	refreshUserTable()
+	err := refreshUserTable()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	user, err := seedOneUser()
 	if err != nil {
@@ -85,12 +99,14 @@ func TestUpdateAUser(t *testing.T) {
 	assert.Equal(t, updatedUser.ID, userUpdate.ID)
 	assert.Equal(t, updatedUser.Email, userUpdate.Email)
 	assert.Equal(t, updatedUser.Nickname, userUpdate.Nickname)
-
 }
 
 func TestDeleteAUser(t *testing.T) {
 
-	refreshUserTable()
+	err := refreshUserTable()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	user, err := seedOneUser()
 
@@ -103,6 +119,9 @@ func TestDeleteAUser(t *testing.T) {
 		t.Errorf("this is the error updating the user: %v\n", err)
 		return
 	}
-	// assert.Equal(t, int(isDeleted), 1) //one shows that the record has been deleted or:
-	assert.Equal(t, isDeleted, int64(1)) //one shows that the record has been deleted
+	//one shows that the record has been deleted or:
+	// assert.Equal(t, int(isDeleted), 1)
+
+	//Can be done this way too
+	assert.Equal(t, isDeleted, int64(1))
 }

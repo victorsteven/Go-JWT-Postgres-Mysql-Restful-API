@@ -4,9 +4,11 @@ import "github.com/victorsteven/fullstack/api/middlewares"
 
 func (s *Server) initializeRoutes() {
 
-	s.Router.HandleFunc("/login", s.Login).Methods("POST")
+	// Home Route
+	s.Router.HandleFunc("/", middlewares.SetMiddlewareJSON(s.Home)).Methods("GET")
 
-	s.Router.HandleFunc("/", s.Home).Methods("GET")
+	// Login Route
+	s.Router.HandleFunc("/login", middlewares.SetMiddlewareJSON(s.Login)).Methods("POST")
 
 	//Users routes
 	s.Router.HandleFunc("/users", middlewares.SetMiddlewareJSON(s.CreateUser)).Methods("POST")
@@ -22,14 +24,3 @@ func (s *Server) initializeRoutes() {
 	s.Router.HandleFunc("/posts/{id}", middlewares.SetMiddlewareJSON(middlewares.SetMiddlewareAuthentication(s.UpdatePost))).Methods("PUT")
 	s.Router.HandleFunc("/posts/{id}", middlewares.SetMiddlewareAuthentication(s.DeletePost)).Methods("DELETE")
 }
-
-// If you want to make a user admin
-// func (s *Server) authOnly(h http.HandlerFunc) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		if !currentUser(r).IsAdmin {
-// 			http.NotFound(w, r)
-// 			return
-// 		}
-// 		h(w, r)
-// 	}
-// }

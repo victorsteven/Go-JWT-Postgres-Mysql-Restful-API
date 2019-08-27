@@ -83,7 +83,7 @@ func seedOneUser() (models.User, error) {
 	return user, nil
 }
 
-func seedUsers() {
+func seedUsers() error {
 
 	users := []models.User{
 		models.User{
@@ -101,9 +101,10 @@ func seedUsers() {
 	for i, _ := range users {
 		err := server.DB.Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
-			log.Fatalf("cannot seed users table: %v", err)
+			return err
 		}
 	}
+	return nil
 }
 
 func refreshUserAndPostTable() error {
