@@ -9,9 +9,12 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
 	"github.com/victorsteven/fullstack/api/controllers"
+	"github.com/victorsteven/fullstack/api/models"
 )
 
 var server = controllers.Server{}
+var userInstance = models.User{}
+var postInstance = models.Post{}
 
 func TestMain(t *testing.T) {
 	var err error
@@ -19,17 +22,172 @@ func TestMain(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Error getting env %v\n", err)
 	}
-	TestDbHost := os.Getenv("TEST_DATABASE_HOST")
+	Database()
+}
 
-	if TestDbHost == "" {
-		TestDbHost = "127.0.0.1"
-	}
+func Database() {
+
+	var err error
+
 	TestDbDriver := os.Getenv("TestDbDriver")
-	TestDbURL := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8&parseTime=True&loc=Local", os.Getenv("TestDbUser"), os.Getenv("TestDbPassword"), TestDbHost, os.Getenv("TestDbName"))
-	server.DB, err = gorm.Open(TestDbDriver, TestDbURL)
-	if err != nil {
-		log.Printf("Error connecting to the database: %v\n", err)
-		return
+
+	if TestDbDriver == "mysql" {
+		DBURL := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", os.Getenv("TestDbUser"), os.Getenv("TestDbPassword"), os.Getenv("TestDbHost"), os.Getenv("TestDbPort"), os.Getenv("TestDbName"))
+		server.DB, err = gorm.Open(TestDbDriver, DBURL)
+		if err != nil {
+			fmt.Printf("Cannot connect to %s database\n", TestDbDriver)
+			log.Fatal("This is the error:", err)
+		} else {
+			fmt.Printf("We are connected to the %s database\n", TestDbDriver)
+		}
 	}
-	fmt.Println("We have connected to the database")
+	if TestDbDriver == "postgres" {
+		DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", os.Getenv("TestDbHost"), os.Getenv("TestDbPort"), os.Getenv("TestDbUser"), os.Getenv("TestDbName"), os.Getenv("TestDbPassword"))
+		server.DB, err = gorm.Open(TestDbDriver, DBURL)
+		if err != nil {
+			fmt.Printf("Cannot connect to %s database\n", TestDbDriver)
+			log.Fatal("This is the error:", err)
+		} else {
+			fmt.Printf("We are connected to the %s database\n", TestDbDriver)
+		}
+	}
+}
+
+func refreshUserTable() error {
+	err := server.DB.Debug().DropTableIfExists(&models.User{}).Error
+	if err != nil {
+		return err
+	}
+	err = server.DB.Debug().AutoMigrate(&models.User{}).Error
+	if err != nil {
+		return err
+	}
+	log.Printf("Successfully refreshed table")
+	return nil
+}
+
+func seedOneUser() (models.User, error) {
+
+	refreshUserTable()
+
+	user := models.User{
+		Nickname: "Pet",
+		Email:    "pet@gmail.com",
+		Password: "password",
+	}
+
+	err := server.DB.Debug().Model(&models.User{}).Create(&user).Error
+	if err != nil {
+		log.Fatalf("cannot seed users table: %v", err)
+	}
+	return user, nil
+}
+
+func seedUsers() {
+
+	users := []models.User{
+		models.User{
+			Nickname: "Steven victor",
+			Email:    "steven@gmail.com",
+			Password: "password",
+		},
+		models.User{
+			Nickname: "Kenny Morris",
+			Email:    "kenny@gmail.com",
+			Password: "password",
+		},
+	}
+
+	for i, _ := range users {
+		err := server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
+		if err != nil {
+			log.Fatalf("cannot seed users table: %v", err)
+		}
+	}
+}
+
+func refreshUserAndPostTable() error {
+
+	err := server.DB.Debug().DropTableIfExists(&models.User{}, &models.Post{}).Error
+	if err != nil {
+		return err
+	}
+	err = server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}).Error
+	if err != nil {
+		return err
+	}
+	log.Printf("Successfully refreshed tables")
+	return nil
+}
+
+func seedOneUserAndOnePost() (models.Post, error) {
+
+	err := refreshUserAndPostTable()
+	if err != nil {
+		return models.Post{}, err
+	}
+	user := models.User{
+		Nickname: "Sam Phil",
+		Email:    "sam@gmail.com",
+		Password: "password",
+	}
+	err = server.DB.Debug().Model(&models.User{}).Create(&user).Error
+	if err != nil {
+		return models.Post{}, err
+	}
+	post := models.Post{
+		Title:    "This is the title sam",
+		Content:  "This is the content sam",
+		AuthorID: user.ID,
+	}
+	err = server.DB.Debug().Model(&models.Post{}).Create(&post).Error
+	if err != nil {
+		return models.Post{}, err
+	}
+	return post, nil
+}
+
+func seedUsersAndPosts() ([]models.User, []models.Post, error) {
+
+	var err error
+
+	if err != nil {
+		return []models.User{}, []models.Post{}, err
+	}
+	var users = []models.User{
+		models.User{
+			Nickname: "Steven victor",
+			Email:    "steven@gmail.com",
+			Password: "password",
+		},
+		models.User{
+			Nickname: "Magu Frank",
+			Email:    "magu@gmail.com",
+			Password: "password",
+		},
+	}
+	var posts = []models.Post{
+		models.Post{
+			Title:   "Title 1",
+			Content: "Hello world 1",
+		},
+		models.Post{
+			Title:   "Title 2",
+			Content: "Hello world 2",
+		},
+	}
+
+	for i, _ := range users {
+		err = server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
+		if err != nil {
+			log.Fatalf("cannot seed users table: %v", err)
+		}
+		posts[i].AuthorID = users[i].ID
+
+		err = server.DB.Debug().Model(&models.Post{}).Create(&posts[i]).Error
+		if err != nil {
+			log.Fatalf("cannot seed posts table: %v", err)
+		}
+	}
+	return users, posts, nil
 }

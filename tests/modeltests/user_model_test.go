@@ -4,67 +4,11 @@ import (
 	"log"
 	"testing"
 
-	// _ "github.com/go-sql-driver/mysql"
-
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/jinzhu/gorm/dialects/mysql"    //mysql driver
+	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres driver
 	"github.com/victorsteven/fullstack/api/models"
 	"gopkg.in/go-playground/assert.v1"
 )
-
-var userInstance = models.User{}
-
-func refreshUserTable() error {
-	err := server.DB.Debug().DropTableIfExists(&models.User{}).Error
-	if err != nil {
-		return err
-	}
-	err = server.DB.Debug().AutoMigrate(&models.User{}).Error
-	if err != nil {
-		return err
-	}
-	log.Printf("Successfully refreshed table")
-	return nil
-}
-
-func seedOneUser() (models.User, error) {
-
-	refreshUserTable()
-
-	user := models.User{
-		Nickname: "Pet",
-		Email:    "pet@gmail.com",
-		Password: "password",
-	}
-
-	err := server.DB.Debug().Model(&models.User{}).Create(&user).Error
-	if err != nil {
-		log.Fatalf("cannot seed users table: %v", err)
-	}
-	return user, nil
-}
-
-func seedUsers() {
-
-	users := []models.User{
-		models.User{
-			Nickname: "Steven victor",
-			Email:    "steven@gmail.com",
-			Password: "password",
-		},
-		models.User{
-			Nickname: "Kenny Morris",
-			Email:    "kenny@gmail.com",
-			Password: "password",
-		},
-	}
-
-	for i, _ := range users {
-		err := server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed users table: %v", err)
-		}
-	}
-}
 
 func TestFindAllUsers(t *testing.T) {
 

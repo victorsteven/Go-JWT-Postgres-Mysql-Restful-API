@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/joho/godotenv"
 	"github.com/victorsteven/fullstack/api/controllers"
@@ -13,17 +12,7 @@ import (
 
 var server = controllers.Server{}
 
-var (
-	PORT       = 0
-	SECRETKEY  []byte
-	DBURL      = ""
-	DBDRIVER   = ""
-	DBUSER     = ""
-	DBPASSWORD = ""
-	DBNAME     = ""
-)
-
-func Load() {
+func Run() {
 
 	var err error
 	err = godotenv.Load()
@@ -32,29 +21,8 @@ func Load() {
 	} else {
 		fmt.Println("We are getting the env values")
 	}
-	PORT, err = strconv.Atoi(os.Getenv("API_PORT"))
-	if err != nil {
-		PORT = 8000
-	}
-	DBHOST := os.Getenv("DB_HOST")
-	if DBHOST == "" {
-		DBHOST = "127.0.0.1"
-	}
-	DBDRIVER = os.Getenv("DB_DRIVER")
-	DBUSER = os.Getenv("DB_USER")
-	DBPASSWORD = os.Getenv("DB_PASSWORD")
-	DBNAME = os.Getenv("DB_NAME")
-	SECRETKEY = []byte(os.Getenv("API_SECRET"))
 
-}
-
-func Run() {
-
-	Load()
-
-	// config.Load()
-
-	server.Initialize(DBDRIVER, DBUSER, DBPASSWORD, DBNAME)
+	server.Initialize(os.Getenv("DB_DRIVER"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT"), os.Getenv("DB_HOST"), os.Getenv("DB_NAME"))
 
 	seed.Load(server.DB)
 

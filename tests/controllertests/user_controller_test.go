@@ -15,77 +15,12 @@ import (
 	"gopkg.in/go-playground/assert.v1"
 )
 
-// defer server.DB.Close()
-
-var userInstance = models.User{}
-
-func refreshUserTable() error {
-	err := server.DB.Debug().DropTableIfExists(&models.User{}).Error
-	if err != nil {
-		return err
-	}
-	err = server.DB.Debug().AutoMigrate(&models.User{}).Error
-	if err != nil {
-		return err
-	}
-	log.Printf("Successfully refreshed table")
-	return nil
-}
-
-func seedOneUser() (models.User, error) {
-
-	err := refreshUserTable()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	user := models.User{
-		Nickname: "Pet",
-		Email:    "pet@gmail.com",
-		Password: "password",
-	}
-
-	err = server.DB.Debug().Model(&models.User{}).Create(&user).Error
-	if err != nil {
-		return models.User{}, err
-	}
-	return user, nil
-}
-
-func seedUsers() ([]models.User, error) {
-
-	var err error
-	if err != nil {
-		return nil, err
-	}
-	users := []models.User{
-		models.User{
-			Nickname: "Steven victor",
-			Email:    "steven@gmail.com",
-			Password: "password",
-		},
-		models.User{
-			Nickname: "Kenny Morris",
-			Email:    "kenny@gmail.com",
-			Password: "password",
-		},
-	}
-	for i, _ := range users {
-		err := server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
-		if err != nil {
-			return []models.User{}, err
-		}
-	}
-	return users, nil
-}
-
 func TestCreateUser(t *testing.T) {
 
 	err := refreshUserTable()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	samples := []struct {
 		inputJSON    string
 		statusCode   int
@@ -164,12 +99,10 @@ func TestGetUsers(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	_, err = seedUsers()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	req, err := http.NewRequest("GET", "/users", nil)
 	if err != nil {
 		t.Errorf("this is the error: %v\n", err)
@@ -177,8 +110,6 @@ func TestGetUsers(t *testing.T) {
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(server.GetUsers)
 	handler.ServeHTTP(rr, req)
-
-	// defer server.DB.Close()
 
 	var users []models.User
 	err = json.Unmarshal([]byte(rr.Body.String()), &users)
@@ -195,7 +126,6 @@ func TestGetUserByID(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	user, err := seedOneUser()
 	if err != nil {
 		log.Fatal(err)
