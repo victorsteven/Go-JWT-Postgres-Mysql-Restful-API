@@ -3,13 +3,13 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/victorsteven/fullstack/api/utils/console"
-	"github.com/victorsteven/fullstack/config"
 )
 
 func CreateToken(user_id uint32) (string, error) {
@@ -19,7 +19,8 @@ func CreateToken(user_id uint32) (string, error) {
 	// claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(config.SECRETKEY)
+	return token.SignedString([]byte(os.Getenv("API_SECRET")))
+
 }
 
 func TokenValid(r *http.Request) error {
@@ -28,7 +29,7 @@ func TokenValid(r *http.Request) error {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return config.SECRETKEY, nil
+		return []byte(os.Getenv("API_SECRET")), nil
 	})
 	if err != nil {
 		return err
@@ -59,7 +60,7 @@ func ExtractTokenID(r *http.Request) (uint32, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return config.SECRETKEY, nil
+		return []byte(os.Getenv("API_SECRET")), nil
 	})
 	if err != nil {
 		return 0, err

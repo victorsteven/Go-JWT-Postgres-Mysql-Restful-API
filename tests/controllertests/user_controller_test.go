@@ -194,7 +194,7 @@ func TestUpdateUser(t *testing.T) {
 		}
 		AuthID = user.ID
 		AuthEmail = user.Email
-		AuthPassword = user.Password
+		AuthPassword = "password" //Note the password in the database is already hashed, we want unhashed
 	}
 	//Login the user and get the authentication token
 	token, err := server.SignIn(AuthEmail, AuthPassword)
@@ -342,7 +342,7 @@ func TestDeleteUser(t *testing.T) {
 		}
 		AuthID = user.ID
 		AuthEmail = user.Email
-		AuthPassword = user.Password
+		AuthPassword = "password" ////Note the password in the database is already hashed, we want unhashed
 	}
 	//Login the user and get the authentication token
 	token, err := server.SignIn(AuthEmail, AuthPassword)

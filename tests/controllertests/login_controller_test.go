@@ -3,6 +3,7 @@ package controllertests
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,18 +19,42 @@ func TestSignIn(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	user, err := seedOneUser()
 	if err != nil {
 		fmt.Printf("This is the error %v\n", err)
 	}
-	fmt.Printf("This is the user: %v\n", user)
 
-	token, err := server.SignIn(user.Email, user.Password)
-	if err != nil {
-		log.Fatal(err)
+	samples := []struct {
+		email        string
+		password     string
+		errorMessage string
+	}{
+		{
+			email:        user.Email,
+			password:     "password", //Note the password has to be this, not the hashed one from the database
+			errorMessage: "",
+		},
+		{
+			email:        user.Email,
+			password:     "Wrong password",
+			errorMessage: "crypto/bcrypt: hashedPassword is not the hash of the given password",
+		},
+		{
+			email:        "Wrong email",
+			password:     "password",
+			errorMessage: "record not found",
+		},
 	}
-	assert.NotEqual(t, token, "")
+
+	for _, v := range samples {
+
+		token, err := server.SignIn(v.email, v.password)
+		if err != nil {
+			assert.Equal(t, err, errors.New(v.errorMessage))
+		} else {
+			assert.NotEqual(t, token, "")
+		}
+	}
 }
 
 func TestLogin(t *testing.T) {
@@ -40,7 +65,6 @@ func TestLogin(t *testing.T) {
 	if err != nil {
 		fmt.Printf("This is the error %v\n", err)
 	}
-
 	samples := []struct {
 		inputJSON    string
 		statusCode   int
@@ -54,9 +78,14 @@ func TestLogin(t *testing.T) {
 			errorMessage: "",
 		},
 		{
+			inputJSON:    `{"email": "pet@gmail.com", "password": "wrong password"}`,
+			statusCode:   422,
+			errorMessage: "Incorrect Password",
+		},
+		{
 			inputJSON:    `{"email": "frank@gmail.com", "password": "password"}`,
 			statusCode:   422,
-			errorMessage: "record not found",
+			errorMessage: "Incorrect Details",
 		},
 		{
 			inputJSON:    `{"email": "kangmail.com", "password": "password"}`,
@@ -84,7 +113,7 @@ func TestLogin(t *testing.T) {
 
 		req, err := http.NewRequest("POST", "/login", bytes.NewBufferString(v.inputJSON))
 		if err != nil {
-			log.Fatalf("this is the error: %v", err)
+			t.Errorf("this is the error: %v", err)
 		}
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(server.Login)
@@ -99,7 +128,7 @@ func TestLogin(t *testing.T) {
 			responseMap := make(map[string]interface{})
 			err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
 			if err != nil {
-				fmt.Printf("Cannot convert to json: %v", err)
+				t.Errorf("Cannot convert to json: %v", err)
 			}
 			assert.Equal(t, responseMap["error"], v.errorMessage)
 		}

@@ -18,6 +18,8 @@ func FormatError(err string) error {
 	if strings.Contains(err, "title") {
 		return errors.New("Title Already Taken")
 	}
-
-	return nil
+	if strings.Contains(err, "hashedPassword") {
+		return errors.New("Incorrect Password")
+	}
+	return errors.New("Incorrect Details")
 }

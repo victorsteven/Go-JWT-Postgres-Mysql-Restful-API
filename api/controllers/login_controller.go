@@ -9,6 +9,8 @@ import (
 	"github.com/victorsteven/fullstack/api/models"
 	"github.com/victorsteven/fullstack/api/responses"
 	"github.com/victorsteven/fullstack/api/utils/channels"
+	"github.com/victorsteven/fullstack/api/utils/formaterror"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (server *Server) Login(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +34,8 @@ func (server *Server) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	token, err := server.SignIn(user.Email, user.Password)
 	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		formattedError := formaterror.FormatError(err.Error())
+		responses.ERROR(w, http.StatusUnprocessableEntity, formattedError)
 		return
 	}
 	responses.JSON(w, http.StatusOK, token)
@@ -48,6 +51,12 @@ func (server *Server) SignIn(email, password string) (string, error) {
 
 		err = server.DB.Debug().Model(models.User{}).Where("email = ?", email).Take(&user).Error
 		if err != nil {
+			ch <- false
+			return
+		}
+
+		err = models.VerifyPassword(user.Password, password)
+		if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
 			ch <- false
 			return
 		}

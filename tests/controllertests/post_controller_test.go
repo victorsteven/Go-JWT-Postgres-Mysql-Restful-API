@@ -25,7 +25,7 @@ func TestCreatePost(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Cannot seed user %v\n", err)
 	}
-	token, err := server.SignIn(user.Email, user.Password)
+	token, err := server.SignIn(user.Email, "password") //Note the password in the database is already hashed, we want unhashed
 	if err != nil {
 		log.Fatalf("cannot login: %v\n", err)
 	}
@@ -226,7 +226,7 @@ func TestUpdatePost(t *testing.T) {
 			continue
 		}
 		PostUserEmail = user.Email
-		PostUserPassword = user.Password
+		PostUserPassword = "password" //Note the password in the database is already hashed, we want unhashed
 	}
 	//Login the user and get the authentication token
 	token, err := server.SignIn(PostUserEmail, PostUserPassword)
@@ -375,7 +375,7 @@ func TestDeletePost(t *testing.T) {
 			continue
 		}
 		PostUserEmail = user.Email
-		PostUserPassword = user.Password
+		PostUserPassword = "password" //Note the password in the database is already hashed, we want unhashed
 	}
 	//Login the user and get the authentication token
 	token, err := server.SignIn(PostUserEmail, PostUserPassword)

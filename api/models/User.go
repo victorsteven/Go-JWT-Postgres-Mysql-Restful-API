@@ -8,8 +8,8 @@ import (
 
 	"github.com/badoux/checkmail"
 	"github.com/jinzhu/gorm"
-	"github.com/victorsteven/fullstack/api/security"
 	"github.com/victorsteven/fullstack/api/utils/channels"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -21,8 +21,16 @@ type User struct {
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
+func Hash(password string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+}
+
+func VerifyPassword(hashedPassword, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
 func (u *User) BeforeSave() error {
-	hashedPassword, err := security.Hash(u.Password)
+	hashedPassword, err := Hash(u.Password)
 	if err != nil {
 		return err
 	}
