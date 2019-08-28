@@ -16,13 +16,15 @@ var server = controllers.Server{}
 var userInstance = models.User{}
 var postInstance = models.Post{}
 
-func TestMain(t *testing.T) {
+func TestMain(m *testing.M) {
 	var err error
 	err = godotenv.Load(os.ExpandEnv("../../.env"))
 	if err != nil {
 		log.Fatalf("Error getting env %v\n", err)
 	}
 	Database()
+
+	os.Exit(m.Run())
 }
 
 func Database() {
