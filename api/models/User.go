@@ -9,7 +9,6 @@ import (
 
 	"github.com/badoux/checkmail"
 	"github.com/jinzhu/gorm"
-	"github.com/victorsteven/fullstack/api/utils/channels"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -94,115 +93,69 @@ func (u *User) Validate(action string) error {
 }
 
 func (u *User) SaveUser(db *gorm.DB) (*User, error) {
-	var err error
-	done := make(chan bool)
-	go func(ch chan<- bool) {
-		defer close(ch)
-		err = db.Debug().Create(&u).Error
-		if err != nil {
-			ch <- false
-			return
-		}
-		ch <- true
-	}(done)
 
-	if channels.OK(done) {
-		return u, nil
+	var err error
+	err = db.Debug().Create(&u).Error
+	if err != nil {
+		return &User{}, err
 	}
-	return &User{}, err
+	return u, nil
 }
 
 func (u *User) FindAllUsers(db *gorm.DB) (*[]User, error) {
 	var err error
 	users := []User{}
-	done := make(chan bool)
-	go func(ch chan<- bool) {
-		defer close(ch)
-		err = db.Debug().Model(&User{}).Limit(100).Find(&users).Error
-		if err != nil {
-			ch <- false
-			return
-		}
-		ch <- true
-	}(done)
-
-	if channels.OK(done) {
-		return &users, nil
+	err = db.Debug().Model(&User{}).Limit(100).Find(&users).Error
+	if err != nil {
+		return &[]User{}, err
 	}
-	return nil, err
+	return &users, err
 }
 
 func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
 	var err error
-	done := make(chan bool)
-	go func(ch chan<- bool) {
-		defer close(ch)
-		err = db.Debug().Model(User{}).Where("id = ?", uid).Take(&u).Error
-		if err != nil {
-			ch <- false
-			return
-		}
-		ch <- true
-	}(done)
-
-	if channels.OK(done) {
-		return u, nil
+	err = db.Debug().Model(User{}).Where("id = ?", uid).Take(&u).Error
+	if err != nil {
+		return &User{}, err
 	}
 	if gorm.IsRecordNotFoundError(err) {
 		return &User{}, errors.New("User Not Found")
 	}
-	return &User{}, err
+	return u, err
 }
 
 func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
 
-	// TO hash the password
+	// To hash the password
 	err := u.BeforeSave()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	done := make(chan bool)
-	go func(ch chan<- bool) {
-		defer close(ch)
-		db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).UpdateColumns(
-			map[string]interface{}{
-				"password":  u.Password,
-				"nickname":  u.Nickname,
-				"email":     u.Email,
-				"update_at": time.Now(),
-			},
-		)
-		ch <- true
-	}(done)
-
-	if channels.OK(done) {
-		if db.Error != nil {
-			return &User{}, db.Error
-		}
-		// This is the display the updated user
-		err := db.Debug().Model(&User{}).Where("id = ?", uid).Take(&u).Error
-		if err != nil {
-			return &User{}, db.Error
-		}
-		return u, nil
+	db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).UpdateColumns(
+		map[string]interface{}{
+			"password":  u.Password,
+			"nickname":  u.Nickname,
+			"email":     u.Email,
+			"update_at": time.Now(),
+		},
+	)
+	if db.Error != nil {
+		return &User{}, db.Error
 	}
-	return &User{}, db.Error
+	// This is the display the updated user
+	err = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&u).Error
+	if err != nil {
+		return &User{}, err
+	}
+	return u, nil
 }
 
 func (u *User) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
-	done := make(chan bool)
-	go func(ch chan<- bool) {
-		defer close(ch)
-		db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).Delete(&User{})
-		ch <- true
-	}(done)
 
-	if channels.OK(done) {
-		if db.Error != nil {
-			return 0, db.Error
-		}
-		return db.RowsAffected, nil
+	db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).Delete(&User{})
+
+	if db.Error != nil {
+		return 0, db.Error
 	}
-	return 0, db.Error
+	return db.RowsAffected, nil
 }

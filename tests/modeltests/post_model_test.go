@@ -24,7 +24,7 @@ func TestFindAllPosts(t *testing.T) {
 		t.Errorf("this is the error getting the posts: %v\n", err)
 		return
 	}
-	assert.Equal(t, len(posts), 2)
+	assert.Equal(t, len(*posts), 2)
 }
 
 func TestSavePost(t *testing.T) {

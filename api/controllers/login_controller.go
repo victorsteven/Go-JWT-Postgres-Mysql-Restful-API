@@ -8,7 +8,6 @@ import (
 	"github.com/victorsteven/fullstack/api/auth"
 	"github.com/victorsteven/fullstack/api/models"
 	"github.com/victorsteven/fullstack/api/responses"
-	"github.com/victorsteven/fullstack/api/utils/channels"
 	"github.com/victorsteven/fullstack/api/utils/formaterror"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -42,29 +41,18 @@ func (server *Server) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) SignIn(email, password string) (string, error) {
-	user := models.User{}
+
 	var err error
-	done := make(chan bool)
 
-	go func(ch chan<- bool) {
-		defer close(ch)
+	user := models.User{}
 
-		err = server.DB.Debug().Model(models.User{}).Where("email = ?", email).Take(&user).Error
-		if err != nil {
-			ch <- false
-			return
-		}
-
-		err = models.VerifyPassword(user.Password, password)
-		if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-			ch <- false
-			return
-		}
-		ch <- true
-	}(done)
-
-	if channels.OK(done) {
-		return auth.CreateToken(user.ID)
+	err = server.DB.Debug().Model(models.User{}).Where("email = ?", email).Take(&user).Error
+	if err != nil {
+		return "", err
 	}
-	return "", err
+	err = models.VerifyPassword(user.Password, password)
+	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
+		return "", err
+	}
+	return auth.CreateToken(user.ID)
 }
