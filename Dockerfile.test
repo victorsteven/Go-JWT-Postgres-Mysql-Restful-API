@@ -1,0 +1,19 @@
+FROM golang:1.12-alpine
+
+# Install git
+RUN set -ex; \
+    apk update; \
+    apk add --no-cache git
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+
+# RUN go mod tidy
+
+RUN go mod download 
+
+COPY . .
+
+# Run tests
+CMD CGO_ENABLED=0 go test ./...

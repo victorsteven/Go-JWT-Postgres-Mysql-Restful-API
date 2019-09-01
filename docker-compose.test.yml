@@ -1,0 +1,49 @@
+version: '3'
+
+networks:
+  fullstack_test:
+    driver: bridge
+
+services:
+  app_tests:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.test
+    volumes:
+      - api_test:/app/src/app/
+    depends_on:
+      - postgres_test
+    networks:
+      - fullstack_test
+  # db:
+  #   image: postgres:11.1
+  #   ports:
+  #     - "5432:5432"
+  #   expose:
+  #     - "5432"
+  #   environment:
+  #     POSTGRES_USER: root
+  #     POSTGRES_PASSWORD: root
+  #     POSTGRES_DB: testdb
+  #   restart: on-failure
+  #   networks:
+  #     - fullstack_test
+
+  postgres_test:
+    image: postgres:latest
+    container_name: full_db_test
+    environment:
+      - POSTGRES_USER=${TestDbUser}  
+      - POSTGRES_PASSWORD=${TestDbPassword}
+      - POSTGRES_DB=${TestDbName}
+      - DATABASE_HOST=${TestDbHost} 
+    ports:
+      - '5432:5432'
+    volumes:
+      - database_postgres_test:/var/lib/postgresql/data
+    networks:
+      - fullstack_test
+
+volumes:
+  api_test:
+  database_postgres_test:
