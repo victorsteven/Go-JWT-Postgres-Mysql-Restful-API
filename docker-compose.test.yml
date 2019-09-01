@@ -43,6 +43,17 @@ services:
       - database_postgres_test:/var/lib/postgresql/data
     networks:
       - fullstack_test
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - postgres_test
+    ports:
+      - "5555:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    restart: unless-stopped
 
 volumes:
   api_test:
