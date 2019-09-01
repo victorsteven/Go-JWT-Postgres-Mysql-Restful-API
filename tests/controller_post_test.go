@@ -1,4 +1,4 @@
-package controllertests
+package tests
 
 import (
 	"bytes"
@@ -149,7 +149,7 @@ func TestGetPosts(t *testing.T) {
 	assert.Equal(t, rr.Code, http.StatusOK)
 	assert.Equal(t, len(posts), 2)
 }
-func TestGetPostByID(t *testing.T) {
+func TestFindPostByID(t *testing.T) {
 
 	err := refreshUserAndPostTable()
 	if err != nil {
@@ -435,6 +435,7 @@ func TestDeletePost(t *testing.T) {
 			errorMessage: "Unauthorized",
 		},
 	}
+
 	for _, v := range postSample {
 
 		req, _ := http.NewRequest("GET", "/posts", nil)

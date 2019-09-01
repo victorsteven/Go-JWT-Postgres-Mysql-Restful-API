@@ -1,4 +1,4 @@
-package modeltests
+package tests
 
 import (
 	"log"
@@ -17,7 +17,7 @@ func TestFindAllUsers(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	err = seedUsers()
+	_, err = seedUsers()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,6 +36,7 @@ func TestSaveUser(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	newUser := models.User{
 		ID:       1,
 		Email:    "test@gmail.com",
@@ -52,7 +53,7 @@ func TestSaveUser(t *testing.T) {
 	assert.Equal(t, newUser.Nickname, savedUser.Nickname)
 }
 
-func TestGetUserByID(t *testing.T) {
+func TestFindUserByID(t *testing.T) {
 
 	err := refreshUserTable()
 	if err != nil {

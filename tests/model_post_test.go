@@ -1,4 +1,4 @@
-package modeltests
+package tests
 
 import (
 	"log"
@@ -54,7 +54,6 @@ func TestSavePost(t *testing.T) {
 	assert.Equal(t, newPost.Title, savedPost.Title)
 	assert.Equal(t, newPost.Content, savedPost.Content)
 	assert.Equal(t, newPost.AuthorID, savedPost.AuthorID)
-
 }
 
 func TestGetPostByID(t *testing.T) {

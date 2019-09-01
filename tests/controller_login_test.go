@@ -1,4 +1,4 @@
-package controllertests
+package tests
 
 import (
 	"bytes"
@@ -19,6 +19,7 @@ func TestSignIn(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	user, err := seedOneUser()
 	if err != nil {
 		fmt.Printf("This is the error %v\n", err)

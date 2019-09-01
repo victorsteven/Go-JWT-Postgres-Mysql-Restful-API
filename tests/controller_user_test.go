@@ -1,4 +1,4 @@
-package controllertests
+package tests
 
 import (
 	"bytes"
@@ -352,6 +352,7 @@ func TestDeleteUser(t *testing.T) {
 		AuthEmail = user.Email
 		AuthPassword = "password" ////Note the password in the database is already hashed, we want unhashed
 	}
+
 	//Login the user and get the authentication token
 	token, err := server.SignIn(AuthEmail, AuthPassword)
 	if err != nil {
@@ -399,6 +400,7 @@ func TestDeleteUser(t *testing.T) {
 			errorMessage: "Unauthorized",
 		},
 	}
+
 	for _, v := range userSample {
 
 		req, err := http.NewRequest("GET", "/users", nil)
