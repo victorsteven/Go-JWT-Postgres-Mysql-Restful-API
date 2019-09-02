@@ -34,31 +34,19 @@ services:
     container_name: pgadmin_container
     image: dpage/pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     depends_on:
       - postgres
     volumes:
        - pgadmin:/root/.pgadmin
     ports:
-      - "${PGADMIN_PORT:-5050}:80"
+      - "5050:80"
     networks:
       - fullstack
     restart: unless-stopped
 
   
-  # pgadmin:
-  #   image: dpage/pgadmin4
-  #   container_name: pg_admin
-  #   depends_on:
-  #     - postgres
-  #   ports:
-  #     - "6543:80"
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: admin@gmail.com
-  #     PGADMIN_DEFAULT_PASSWORD: password
-  #   restart: unless-stopped
-
   # mysql:
   #   image: mysql:5.7
   #   ports: 

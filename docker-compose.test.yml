@@ -1,11 +1,8 @@
 version: '3'
 
-networks:
-  fullstack_test:
-    driver: bridge
-
 services:
   app_tests:
+    container_name: app_tests
     build:
       context: .
       dockerfile: ./Dockerfile.test
@@ -15,28 +12,15 @@ services:
       - postgres_test
     networks:
       - fullstack_test
-  # db:
-  #   image: postgres:11.1
-  #   ports:
-  #     - "5432:5432"
-  #   expose:
-  #     - "5432"
-  #   environment:
-  #     POSTGRES_USER: root
-  #     POSTGRES_PASSWORD: root
-  #     POSTGRES_DB: testdb
-  #   restart: on-failure
-  #   networks:
-  #     - fullstack_test
 
   postgres_test:
     image: postgres:latest
     container_name: full_db_test
     environment:
-      - POSTGRES_USER=${TestDbUser}  
-      - POSTGRES_PASSWORD=${TestDbPassword}
-      - POSTGRES_DB=${TestDbName}
-      - DATABASE_HOST=${TestDbHost} 
+      - POSTGRES_USER=${TEST_DB_USER}  
+      - POSTGRES_PASSWORD=${TEST_DB_PASSWORD}
+      - POSTGRES_DB=${TEST_DB_NAME}
+      - DATABASE_HOST=${TEST_DB_HOST} 
     ports:
       - '5432:5432'
     volumes:
@@ -44,17 +28,22 @@ services:
     networks:
       - fullstack_test
   
-  pgadmin:
+  pgadmin_test:
     image: dpage/pgadmin4
+    container_name: pgadmin_test
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL_TEST}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD_TEST}
     depends_on:
       - postgres_test
     ports:
       - "5555:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
-      PGADMIN_DEFAULT_PASSWORD: password
     restart: unless-stopped
 
 volumes:
   api_test:
   database_postgres_test:
+
+networks:
+  fullstack_test:
+    driver: bridge
