@@ -16,7 +16,7 @@ services:
 
   # postgres_test:
   #   image: postgres:latest
-  #   container_name: full_db_test
+  #   container_name: full_db_test_postgress
   #   environment:
   #     - POSTGRES_USER=${TEST_DB_USER}  
   #     - POSTGRES_PASSWORD=${TEST_DB_PASSWORD}
@@ -31,9 +31,9 @@ services:
     
   mysql_test:
     image: mysql:5.7
-    container_name: full_db_test    
+    container_name: full_db_test_mysql    
     ports: 
-      - 3306:3306
+      - 3333:3306
     environment: 
       - MYSQL_DATABASE=${TEST_DB_NAME}
       - MYSQL_USER=${TEST_DB_USER}

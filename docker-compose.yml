@@ -4,7 +4,7 @@ services:
     container_name: full_app
     build: .
     ports: 
-      - 8080:8080 # Forward the exposed port 8080 on the container to port 8080 on the host machine
+      - 8080:8080 
     restart: on-failure
     volumes:
       - api:/usr/src/app/
@@ -17,7 +17,7 @@ services:
 
   # postgres:
   #   image: postgres:latest
-  #   container_name: full_db
+  #   container_name: full_db_postgres
   #   environment:
   #     - POSTGRES_USER=${DB_USER}  
   #     - POSTGRES_PASSWORD=${DB_PASSWORD}
@@ -38,8 +38,6 @@ services:
   #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
   #   depends_on:
   #     - postgres
-  #   volumes:
-  #      - pgadmin:/root/.pgadmin
   #   ports:
   #     - "5050:80"
   #   networks:
@@ -49,15 +47,15 @@ services:
   
   mysql:
     image: mysql:5.7
-    container_name: full_db
+    container_name: full_db_mysql
     ports: 
       - 3306:3306
     environment: 
-      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_HOST=${DB_HOST} 
       - MYSQL_USER=${DB_USER}
       - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-      - DATABASE_HOST=${DB_HOST} 
     volumes:
       - database_mysql:/var/lib/mysql
     networks:
@@ -66,13 +64,13 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin_container
-    environment:
-      - PMA_PORT=${DB_PORT}
-      - PMA_HOST=${DB_HOST} 
-      - PMA_USER=${DB_USER}
-      - PMA_PASSWORD=${DB_PASSWORD}
     depends_on:
       - mysql
+    environment:
+      - PMA_HOST=mysql # Note the "mysql". Must be the name of the what you used as the mysql service.
+      - PMA_USER=${DB_USER}
+      - PMA_PORT=${DB_PORT}
+      - PMA_PASSWORD=${DB_PASSWORD}
     ports:
       - 9090:80
     restart: always
@@ -83,7 +81,6 @@ services:
 volumes:
   api:
   # database_postgres:
-  # pgadmin:
   database_mysql:
 
 # Networks to be created to facilitate communication between containers
