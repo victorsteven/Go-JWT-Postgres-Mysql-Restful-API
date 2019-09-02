@@ -9,46 +9,46 @@ services:
     volumes:
       - api_test:/app/src/app/
     depends_on:
-      # - postgres_test
-      - mysql_test
+      - postgres_test
+      # - mysql_test
     networks:
       - fullstack_test
 
-  # postgres_test:
-  #   image: postgres:latest
-  #   container_name: full_db_test_postgress
-  #   environment:
-  #     - POSTGRES_USER=${TEST_DB_USER}  
-  #     - POSTGRES_PASSWORD=${TEST_DB_PASSWORD}
-  #     - POSTGRES_DB=${TEST_DB_NAME}
-  #     - DATABASE_HOST=${TEST_DB_HOST} 
-  #   ports:
-  #     - '5432:5432'
-  #   volumes:
-  #     - database_postgres_test:/var/lib/postgresql/data
-  #   networks:
-  #     - fullstack_test
-    
-  mysql_test:
-    image: mysql:5.7
-    container_name: full_db_test_mysql    
-    ports: 
-      - 3333:3306
-    environment: 
-      - MYSQL_DATABASE=${TEST_DB_NAME}
-      - MYSQL_USER=${TEST_DB_USER}
-      - MYSQL_PASSWORD=${TEST_DB_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${TEST_DB_PASSWORD}
+  postgres_test:
+    image: postgres:latest
+    container_name: full_db_test_postgress
+    environment:
+      - POSTGRES_USER=${TEST_DB_USER}  
+      - POSTGRES_PASSWORD=${TEST_DB_PASSWORD}
+      - POSTGRES_DB=${TEST_DB_NAME}
       - DATABASE_HOST=${TEST_DB_HOST} 
+    ports:
+      - '5555:5432'
     volumes:
-      - database_mysql_test:/var/lib/mysql
+      - database_postgres_test:/var/lib/postgresql/data
     networks:
       - fullstack_test
+    
+  # mysql_test:
+  #   image: mysql:5.7
+  #   container_name: full_db_test_mysql    
+  #   ports: 
+  #     - 3333:3306
+  #   environment: 
+  #     - MYSQL_DATABASE=${TEST_DB_NAME}
+  #     - MYSQL_USER=${TEST_DB_USER}
+  #     - MYSQL_PASSWORD=${TEST_DB_PASSWORD}
+  #     - MYSQL_ROOT_PASSWORD=${TEST_DB_PASSWORD}
+  #     - DATABASE_HOST=${TEST_DB_HOST} 
+  #   volumes:
+  #     - database_mysql_test:/var/lib/mysql
+  #   networks:
+  #     - fullstack_test
   
 volumes:
   api_test:
-  # database_postgres_test:
-  database_mysql_test:
+  database_postgres_test:
+  # database_mysql_test:
 
 networks:
   fullstack_test:

@@ -9,79 +9,79 @@ services:
     volumes:
       - api:/usr/src/app/
     depends_on:
-      # - postgres # This service depends on postgres. Start that first.
-      - mysql # This service depends on mysql. Start that first.
+      - postgres # This service depends on postgres. Start that first.
+      # - mysql # This service depends on mysql. Start that first.
     networks:
       - fullstack
 
 
-  # postgres:
-  #   image: postgres:latest
-  #   container_name: full_db_postgres
-  #   environment:
-  #     - POSTGRES_USER=${DB_USER}  
-  #     - POSTGRES_PASSWORD=${DB_PASSWORD}
-  #     - POSTGRES_DB=${DB_NAME}
-  #     - DATABASE_HOST=${DB_HOST} 
-  #   ports:
-  #     - '5432:5432'
-  #   volumes:
-  #     - database_postgres:/var/lib/postgresql/data
-  #   networks:
-  #     - fullstack
-    
-  # pgadmin:
-  #   image: dpage/pgadmin4
-  #   container_name: pgadmin_container
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-  #   depends_on:
-  #     - postgres
-  #   ports:
-  #     - "5050:80"
-  #   networks:
-  #     - fullstack
-  #   restart: unless-stopped
-
-  
-  mysql:
-    image: mysql:5.7
-    container_name: full_db_mysql
-    ports: 
-      - 3306:3306
-    environment: 
-      - MYSQL_ROOT_HOST=${DB_HOST} 
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - database_mysql:/var/lib/mysql
-    networks:
-      - fullstack
-  
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin_container
-    depends_on:
-      - mysql
+  postgres:
+    image: postgres:latest
+    container_name: full_db_postgres
     environment:
-      - PMA_HOST=mysql # Note the "mysql". Must be the name of the what you used as the mysql service.
-      - PMA_USER=${DB_USER}
-      - PMA_PORT=${DB_PORT}
-      - PMA_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}  
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - DATABASE_HOST=${DB_HOST} 
     ports:
-      - 9090:80
-    restart: always
+      - '5432:5432'
+    volumes:
+      - database_postgres:/var/lib/postgresql/data
     networks:
       - fullstack
+    
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      - postgres
+    ports:
+      - "5050:80"
+    networks:
+      - fullstack
+    restart: unless-stopped
+
+  
+  # mysql:
+  #   image: mysql:5.7
+  #   container_name: full_db_mysql
+  #   ports: 
+  #     - 3306:3306
+  #   environment: 
+  #     - MYSQL_ROOT_HOST=${DB_HOST} 
+  #     - MYSQL_USER=${DB_USER}
+  #     - MYSQL_PASSWORD=${DB_PASSWORD}
+  #     - MYSQL_DATABASE=${DB_NAME}
+  #     - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+  #   volumes:
+  #     - database_mysql:/var/lib/mysql
+  #   networks:
+  #     - fullstack
+  
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin
+  #   container_name: phpmyadmin_container
+  #   depends_on:
+  #     - mysql
+  #   environment:
+  #     - PMA_HOST=mysql # Note the "mysql". Must be the name of the what you used as the mysql service.
+  #     - PMA_USER=${DB_USER}
+  #     - PMA_PORT=${DB_PORT}
+  #     - PMA_PASSWORD=${DB_PASSWORD}
+  #   ports:
+  #     - 9090:80
+  #   restart: always
+  #   networks:
+  #     - fullstack
 
 
 volumes:
   api:
-  # database_postgres:
-  database_mysql:
+  database_postgres:
+  # database_mysql:
 
 # Networks to be created to facilitate communication between containers
 networks:
