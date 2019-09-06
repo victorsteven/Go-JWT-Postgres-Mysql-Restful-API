@@ -55,30 +55,36 @@ spec:
         - image: mysql:5.7            # The container image
           name: mysql
           imagePullPolicy: "IfNotPresent"  # Get it from dockerhub if it is not present in our machine
-          env:                        # Environment variables passed to the container 
-          - name: MYSQL_ROOT_PASSWORD
-            valueFrom:                # Read environment variables from kubernetes secrets
-              secretKeyRef:
-                name: mysql-root-pass
-                key: mysql-root-password 
 
-          - name: MYSQL_DATABASE 
-            valueFrom:
-              secretKeyRef:
-                name: mysql-db-name
-                key: mysql-database 
+          envFrom:                                # Environment variables passed to the container 
+          - secretRef:                            # Read environment variables from kubernetes secrets
+            name: postgres-secret
 
-          - name: MYSQL_USER 
-            valueFrom:
-              secretKeyRef:
-                name: mysql-db-user
-                key: mysql-username
+          # env:                        # Environment variables passed to the container 
+          # - name: MYSQL_ROOT_PASSWORD
+          #   valueFrom:                # Read environment variables from kubernetes secrets
+          #     secretKeyRef:
+          #       name: mysql-root-pass
+          #       key: DB_PASSWORD      # The key in the .env file
 
-          - name: MYSQL_PASSWORD 
-            valueFrom:
-              secretKeyRef:
-                name: mysql-db-pass
-                key: mysql-password
+          # - name: MYSQL_DATABASE 
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: mysql-db-name
+          #       key: DB_NAME 
+
+          # - name: MYSQL_USER 
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: mysql-db-user
+          #       key: DB_USER
+
+          # - name: MYSQL_PASSWORD 
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: mysql-db-pass
+          #       key: DB_PASSWORD
+          
           ports:
           - containerPort: 3306       # The port that the container exposes 
             name: mysql

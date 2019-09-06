@@ -16,54 +16,57 @@ spec:
     spec: 
       containers:
       - name: fullstack-app-mysql 
-        image: victorsteven/fullstack:1.1.6
+        image: victorsteven/fullstack:1.1.7
         imagePullPolicy: IfNotPresent
         ports:
           - name: http
             containerPort: 8080 
+        envFrom:
+          - secretRef:
+            name: mysql-secret
       
-        env:  
-        - name:  DB_HOST  # Name of the env variable
-          valueFrom:      # Get the env value from the kubernetes secrets
-            secretKeyRef:
-              name: mysql-db-host
-              key: mysql-host
+        # env:  
+        # - name:  DB_HOST  # Name of the env variable
+        #   valueFrom:      # Get the env value from the kubernetes secrets
+        #     secretKeyRef:
+        #       name: mysql-db-host
+        #       key: DB_HOST   # The key in the .env file
 
-        - name: DB_DRIVER
-          valueFrom: 
-            secretKeyRef:
-              name: mysql-db-driver
-              key: mysql-driver 
+        # - name: DB_DRIVER
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: mysql-db-driver
+        #       key: DB_DRIVER 
 
-        - name: API_SECRET
-          valueFrom: 
-            secretKeyRef:
-              name: api-secret
-              key: apisecret
+        # - name: API_SECRET
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: api-secret
+        #       key: API_SECRET
 
-        - name: DB_USER
-          valueFrom: 
-            secretKeyRef:
-              name: mysql-db-user
-              key: mysql-username
+        # - name: DB_USER
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: mysql-db-user
+        #       key: DB_USER
 
-        - name: DB_PASSWORD
-          valueFrom: 
-            secretKeyRef:
-              name: mysql-db-pass
-              key: mysql-password
+        # - name: DB_PASSWORD
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: mysql-db-pass
+        #       key: DB_PASSWORD
 
-        - name: DB_NAME
-          valueFrom: 
-            secretKeyRef:
-              name: mysql-db-name
-              key: mysql-database
+        # - name: DB_NAME
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: mysql-db-name
+        #       key: DB_NAME
 
-        - name: DB_PORT
-          valueFrom: 
-            secretKeyRef:
-              name: mysql-db-port
-              key: mysql-port 
+        # - name: DB_PORT
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: mysql-db-port
+        #       key: DB_PORT   
 
 
 apiVersion: v1  

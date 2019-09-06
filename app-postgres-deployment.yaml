@@ -16,54 +16,57 @@ spec:
     spec: 
       containers:
       - name: fullstack-app-postgres 
-        image: victorsteven/fullstack:1.1.5
+        image: victorsteven/fullstack:1.1.9
         imagePullPolicy: IfNotPresent
         ports:
           - name: http
-            containerPort: 8888 
+            containerPort: 8080 
+        envFrom:
+          - secretRef:
+              name: postgres-secret
       
-        env:  
-        - name:  DB_HOST  # Name of the env variable
-          valueFrom:      # Get the env value from the kubernetes secrets
-            secretKeyRef:
-              name: postgres-db-host
-              key: postgres-host
+        # env:  
+        # - name:  DB_HOST  # Name of the env variable
+        #   valueFrom:      # Get the env value from the kubernetes secrets
+        #     secretKeyRef:
+        #       name: postgres-db-host
+        #       key: DB_HOST    # The key in the .env file
 
-        - name: DB_DRIVER
-          valueFrom: 
-            secretKeyRef:
-              name: postgres-db-driver
-              key: postgres-driver 
+        # - name: DB_DRIVER
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: postgres-db-driver
+        #       key: DB_DRIVER 
 
-        - name: API_SECRET
-          valueFrom: 
-            secretKeyRef:
-              name: api-secret
-              key: apisecret
+        # - name: API_SECRET
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: api-secret
+        #       key: API_SECRET
 
-        - name: DB_USER
-          valueFrom: 
-            secretKeyRef:
-              name: postgres-db-user
-              key: postgres-username
+        # - name: DB_USER
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: postgres-db-user
+        #       key: DB_USER
 
-        - name: DB_PASSWORD
-          valueFrom: 
-            secretKeyRef:
-              name: postgres-db-password
-              key: postgres-password
+        # - name: DB_PASSWORD
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: postgres-db-password
+        #       key: DB_PASSWORD
 
-        - name: DB_NAME
-          valueFrom: 
-            secretKeyRef:
-              name: postgres-db-name
-              key: postgres-database
+        # - name: DB_NAME
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: postgres-db-name
+        #       key: DB_NAME
 
-        - name: DB_PORT
-          valueFrom: 
-            secretKeyRef:
-              name: postgres-db-port
-              key: postgres-port 
+        # - name: DB_PORT
+        #   valueFrom: 
+        #     secretKeyRef:
+        #       name: postgres-db-port
+        #       key: DB_PORT 
 
 
 apiVersion: v1  
@@ -78,5 +81,5 @@ spec:
     app: fullstack-app-postgres 
   ports: 
   - name: http
-    port: 8888
-    targetPort: 8888
+    port: 8080
+    targetPort: 8080

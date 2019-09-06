@@ -9,13 +9,13 @@ services:
     volumes:
       - api:/usr/src/app/
     depends_on:
-      - postgres # This service depends on postgres. Start that first.
-      # - mysql # This service depends on mysql. Start that first.
+      - fullstack-postgres # This service depends on postgres. Start that first.
+      # - fullstack-mysql # This service depends on mysql. Start that first.
     networks:
       - fullstack
 
 
-  postgres:
+  fullstack-postgres:
     image: postgres:latest
     container_name: full_db_postgres
     environment:
@@ -37,7 +37,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     depends_on:
-      - postgres
+      - fullstack-postgres
     ports:
       - "5050:80"
     networks:
@@ -45,7 +45,7 @@ services:
     restart: unless-stopped
 
   
-  # mysql:
+  # fullstack-mysql:
   #   image: mysql:5.7
   #   container_name: full_db_mysql
   #   ports: 
@@ -65,7 +65,7 @@ services:
   #   image: phpmyadmin/phpmyadmin
   #   container_name: phpmyadmin_container
   #   depends_on:
-  #     - mysql
+  #     - fullstack-mysql
   #   environment:
   #     - PMA_HOST=mysql # Note the "mysql". Must be the name of the what you used as the mysql service.
   #     - PMA_USER=${DB_USER}

@@ -53,24 +53,28 @@ spec:
         - image: postgres:latest                  # The container image
           name: postgres
           imagePullPolicy: "IfNotPresent"
-          env:                                    # Environment variables passed to the container 
-          - name: POSTGRES_DB 
-            valueFrom:                            # Read environment variables from kubernetes secrets
-              secretKeyRef:
-                name: postgres-db-name
-                key: postgres-database 
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+            
+          # env:                                    # Environment variables passed to the container 
+          # - name: POSTGRES_DB 
+          #   valueFrom:                            # Read environment variables from kubernetes secrets
+          #     secretKeyRef:
+          #       name: postgres-db-name
+          #       key: DB_NAME                      # The key in the .env file
 
-          - name: POSTGRES_USER 
-            valueFrom:
-              secretKeyRef:
-                name: postgres-db-user
-                key: postgres-username
+          # - name: POSTGRES_USER 
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: postgres-db-user
+          #       key: DB_USER
 
-          - name: POSTGRES_PASSWORD 
-            valueFrom:
-              secretKeyRef:
-                name: postgres-db-password
-                key: postgres-password
+          # - name: POSTGRES_PASSWORD 
+          #   valueFrom:
+          #     secretKeyRef:
+          #       name: postgres-db-password
+          #       key: DB_PASSWORD
 
           ports:
             - containerPort: 5432                   # The port that the container exposes 
