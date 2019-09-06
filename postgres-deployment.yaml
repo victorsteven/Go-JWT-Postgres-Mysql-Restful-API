@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-volume
+  labels:
+    type: local
+    app: fullstack
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+  persistentVolumeReclaimPolicy: Retain
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim
+  labels:
+    app: fullstack
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: fullstack-postgres
+  labels:
+    app: fullstack
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+  selector:
+    app: fullstack
+    tier: postgres 
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fullstack-postgres
+  labels:
+    app: fullstack
+spec:
+  selector:
+    matchLabels:
+      app: fullstack
+      tier: postgres
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: fullstack
+        tier: postgres
+    spec:
+      containers:
+        - image: postgres:latest
+          name: postgres
+          imagePullPolicy: "IfNotPresent"
+          env:
+          - name: POSTGRES_DB 
+            valueFrom:
+              secretKeyRef:
+                name: postgres-db-name
+                key: postgres-database 
+
+          - name: POSTGRES_USER 
+            valueFrom:
+              secretKeyRef:
+                name: postgres-db-user
+                key: postgres-username
+
+          - name: POSTGRES_PASSWORD 
+            valueFrom:
+              secretKeyRef:
+                name: postgres-db-password
+                key: postgres-password
+
+          ports:
+            - containerPort: 5432
+              name: postgres
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgredb
+      volumes:
+        - name: postgredb
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
+
+
+

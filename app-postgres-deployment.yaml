@@ -1,0 +1,84 @@
+apiVersion: v1  
+kind: Service 
+metadata:
+  name: fullstack-server
+  labels:
+    app: fullstack-server
+spec:
+  type: NodePort  
+  selector:
+    app: fullstack-server 
+  ports: 
+  - name: http
+    port: 8080
+    targetPort: 8080
+
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: fullstack-server 
+  labels:
+    app: fullstack-server
+spec:
+  replicas: 1  
+  selector:
+    matchLabels: 
+      app: fullstack-server
+  template:   
+    metadata:
+      labels: 
+        app: fullstack-server
+    spec: 
+      containers:
+      - name: fullstack-server 
+        image: victorsteven/fullstack:1.1.1
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: http
+            containerPort: 8080 
+      
+        env:  
+        - name:  DB_HOST  #Name of the env variable
+          valueFrom: #Get the env value from the kubernetes secrets
+            secretKeyRef:
+              name: postgres-db-host
+              key: postgres-host
+
+        - name: DB_DRIVER
+          valueFrom: 
+            secretKeyRef:
+              name: postgres-db-driver
+              key: postgres-driver 
+
+        - name: API_SECRET
+          valueFrom: 
+            secretKeyRef:
+              name: api-secret
+              key: apisecret
+
+        - name: DB_USER
+          valueFrom: 
+            secretKeyRef:
+              name: postgres-db-user
+              key: postgres-username
+
+        - name: DB_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: postgres-db-password
+              key: postgres-password
+
+        - name: DB_NAME
+          valueFrom: 
+            secretKeyRef:
+              name: postgres-db-name
+              key: postgres-database
+
+        - name: DB_PORT
+          valueFrom: 
+            secretKeyRef:
+              name: postgres-db-port
+              key: postgres-port 
+
+
+        
