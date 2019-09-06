@@ -1,0 +1,82 @@
+apiVersion: apps/v1 
+kind: Deployment              # Type of the kubernetes resource
+metadata:
+  name: fullstack-app-mysql 
+  labels:
+    app: fullstack-app-mysql
+spec:
+  replicas: 1  
+  selector:
+    matchLabels: 
+      app: fullstack-app-mysql
+  template:   
+    metadata:
+      labels: 
+        app: fullstack-app-mysql
+    spec: 
+      containers:
+      - name: fullstack-app-mysql 
+        image: victorsteven/fullstack:1.1.6
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: http
+            containerPort: 8080 
+      
+        env:  
+        - name:  DB_HOST  # Name of the env variable
+          valueFrom:      # Get the env value from the kubernetes secrets
+            secretKeyRef:
+              name: mysql-db-host
+              key: mysql-host
+
+        - name: DB_DRIVER
+          valueFrom: 
+            secretKeyRef:
+              name: mysql-db-driver
+              key: mysql-driver 
+
+        - name: API_SECRET
+          valueFrom: 
+            secretKeyRef:
+              name: api-secret
+              key: apisecret
+
+        - name: DB_USER
+          valueFrom: 
+            secretKeyRef:
+              name: mysql-db-user
+              key: mysql-username
+
+        - name: DB_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: mysql-db-pass
+              key: mysql-password
+
+        - name: DB_NAME
+          valueFrom: 
+            secretKeyRef:
+              name: mysql-db-name
+              key: mysql-database
+
+        - name: DB_PORT
+          valueFrom: 
+            secretKeyRef:
+              name: mysql-db-port
+              key: mysql-port 
+
+
+apiVersion: v1  
+kind: Service 
+metadata:
+  name: fullstack-app-mysql
+  labels:
+    app: fullstack-app-mysql
+spec:
+  type: NodePort  
+  selector:
+    app: fullstack-app-mysql 
+  ports: 
+  - name: http
+    port: 8080
+    targetPort: 8080

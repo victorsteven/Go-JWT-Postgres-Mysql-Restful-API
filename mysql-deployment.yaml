@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-volume
+  labels:
+    type: local
+    app: fullstack-mysql
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+  persistentVolumeReclaimPolicy: Retain
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+    app: fullstack-mysql
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+
+
+apiVersion: apps/v1
+kind: Deployment                    # Type of the kubernetes resource
+metadata:
+  name: fullstack-mysql             # Name of the deployment (Use this name as db host in your application)
+  labels:                           # Labels applied to this deployment
+    app: fullstack-mysql
+spec:
+  selector:
+    matchLabels:                    # This deployment applies to the Pods matching the specified labels
+      app: fullstack-mysql
+      tier: mysql
+  strategy:
+    type: Recreate 
+  replicas: 1
+  template:                         # Template for the pods in this deployment
+    metadata: 
+      labels:                       # labels to be applied to the pods in this deployment 
+        app: fullstack-mysql
+        tier: mysql
+    spec:                           # The spec for the containers that will be run inside the Pods in this deployment
+      containers:
+        - image: mysql:5.7            # The container image
+          name: mysql
+          imagePullPolicy: "IfNotPresent"  # Get it from dockerhub if it is not present in our machine
+          env:                        # Environment variables passed to the container 
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:                # Read environment variables from kubernetes secrets
+              secretKeyRef:
+                name: mysql-root-pass
+                key: mysql-root-password 
+
+          - name: MYSQL_DATABASE 
+            valueFrom:
+              secretKeyRef:
+                name: mysql-db-name
+                key: mysql-database 
+
+          - name: MYSQL_USER 
+            valueFrom:
+              secretKeyRef:
+                name: mysql-db-user
+                key: mysql-username
+
+          - name: MYSQL_PASSWORD 
+            valueFrom:
+              secretKeyRef:
+                name: mysql-db-pass
+                key: mysql-password
+          ports:
+          - containerPort: 3306       # The port that the container exposes 
+            name: mysql
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-persistent-storage # This name should match the name specified in `volumes.name`
+      volumes:                        # A PersistentVolume is mounted as a volume to the Pod  
+      - name: mysql-persistent-storage 
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: fullstack-mysql
+  labels:
+    app: fullstack-mysql
+spec:
+  type: NodePort
+  ports:
+    - port: 3306
+  selector:
+    app: fullstack-mysql
+    tier: mysql 

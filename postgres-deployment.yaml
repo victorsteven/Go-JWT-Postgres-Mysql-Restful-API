@@ -1,74 +1,61 @@
 apiVersion: v1
-kind: PersistentVolume
+kind: PersistentVolume                        # Create a PersistentVolume
 metadata:
   name: postgres-pv-volume
   labels:
     type: local
-    app: fullstack
+    app: fullstack-postgres
 spec:
-  storageClassName: manual
+  storageClassName: manual                    # Storage class. A PV Claim requesting the same storageClass can be bound to this volume.
   capacity:
     storage: 5Gi
   accessModes:
     - ReadWriteMany
-  hostPath:
+  hostPath:                                   # hostPath PersistentVolume is used for development and testing. It uses a file/directory on the Node to emulate network-attached storage
     path: "/mnt/data"
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Retain       # Retain the PersistentVolume even after PersistentVolumeClaim is deleted. The volume is considered “released”. But it is not yet available for another claim because the previous claimant’s data remains on the volume. 
 
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
+kind: PersistentVolumeClaim                   # Create a PersistentVolumeClaim to request a PersistentVolume storage
+metadata:                                     # Claim name and labels
   name: postgres-pv-claim
   labels:
-    app: fullstack
-spec:
-  storageClassName: manual
+    app: fullstack-postgres
+spec:                                         # Access mode and resource limits
+  storageClassName: manual                    # Request a certain storage class
   accessModes:
-    - ReadWriteMany
+    - ReadWriteMany                           # ReadWriteMany means the volume can be mounted as read-write by many Nodes
   resources:
     requests:
       storage: 5Gi
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: fullstack-postgres
-  labels:
-    app: fullstack
-spec:
-  type: NodePort
-  ports:
-    - port: 5432
-  selector:
-    app: fullstack
-    tier: postgres 
-
+ 
 
 apiVersion: apps/v1
-kind: Deployment
+kind: Deployment                                # Type of the kubernetes resource
 metadata:
-  name: fullstack-postgres
-  labels:
-    app: fullstack
+  name: fullstack-postgres                       # Name of the deployment
+  labels:                                        # Labels applied to this deployment 
+    app: fullstack-postgres
 spec:
   selector:
-    matchLabels:
-      app: fullstack
+    matchLabels:                                  # This deployment applies to the Pods matching the specified labels
+      app: fullstack-postgres
       tier: postgres
   replicas: 1
-  template:
+  template:                                       # Template for the Pods in this deployment
     metadata:
-      labels:
-        app: fullstack
+      labels:                                     # Labels to be applied to the Pods in this deployment
+        app: fullstack-postgres
         tier: postgres
-    spec:
+    spec:                                         # The spec for the containers that will be run inside the Pods in this deployment
       containers:
-        - image: postgres:latest
+        - image: postgres:latest                  # The container image
           name: postgres
           imagePullPolicy: "IfNotPresent"
-          env:
+          env:                                    # Environment variables passed to the container 
           - name: POSTGRES_DB 
-            valueFrom:
+            valueFrom:                            # Read environment variables from kubernetes secrets
               secretKeyRef:
                 name: postgres-db-name
                 key: postgres-database 
@@ -86,15 +73,27 @@ spec:
                 key: postgres-password
 
           ports:
-            - containerPort: 5432
+            - containerPort: 5432                   # The port that the container exposes 
               name: postgres
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
-              name: postgredb
-      volumes:
-        - name: postgredb
+              name: postgres-persistent-storage     # This name should match the name specified in `volumes.name`
+      volumes:                                      # A PersistentVolume is mounted as a volume to the Pod 
+        - name: postgres-persistent-storage
           persistentVolumeClaim:
             claimName: postgres-pv-claim
 
 
-
+apiVersion: v1                                      # API version
+kind: Service                                       # Type of kubernetes resource 
+metadata:
+  name: fullstack-postgres                          # Name of the resource
+  labels:                                           # Labels that will be applied to the resource
+    app: fullstack-postgres
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+  selector:                                         # Selects any Pod with labels `app=fullstack-postgres,tier=postgres`
+    app: fullstack-postgres
+    tier: postgres

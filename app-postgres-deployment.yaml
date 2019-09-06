@@ -1,45 +1,30 @@
-apiVersion: v1  
-kind: Service 
-metadata:
-  name: fullstack-server
-  labels:
-    app: fullstack-server
-spec:
-  type: NodePort  
-  selector:
-    app: fullstack-server 
-  ports: 
-  - name: http
-    port: 8080
-    targetPort: 8080
-
 apiVersion: apps/v1 
 kind: Deployment
 metadata:
-  name: fullstack-server 
+  name: fullstack-app-postgres 
   labels:
-    app: fullstack-server
+    app: fullstack-app-postgres
 spec:
   replicas: 1  
   selector:
     matchLabels: 
-      app: fullstack-server
+      app: fullstack-app-postgres
   template:   
     metadata:
       labels: 
-        app: fullstack-server
+        app: fullstack-app-postgres
     spec: 
       containers:
-      - name: fullstack-server 
-        image: victorsteven/fullstack:1.1.1
+      - name: fullstack-app-postgres 
+        image: victorsteven/fullstack:1.1.5
         imagePullPolicy: IfNotPresent
         ports:
           - name: http
-            containerPort: 8080 
+            containerPort: 8888 
       
         env:  
-        - name:  DB_HOST  #Name of the env variable
-          valueFrom: #Get the env value from the kubernetes secrets
+        - name:  DB_HOST  # Name of the env variable
+          valueFrom:      # Get the env value from the kubernetes secrets
             secretKeyRef:
               name: postgres-db-host
               key: postgres-host
@@ -81,4 +66,17 @@ spec:
               key: postgres-port 
 
 
-        
+apiVersion: v1  
+kind: Service 
+metadata:
+  name: fullstack-app-postgres
+  labels:
+    app: fullstack-app-postgres
+spec:
+  type: NodePort  
+  selector:
+    app: fullstack-app-postgres 
+  ports: 
+  - name: http
+    port: 8888
+    targetPort: 8888

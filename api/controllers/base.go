@@ -32,8 +32,7 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		} else {
 			fmt.Printf("We are connected to the %s database", Dbdriver)
 		}
-	}
-	if Dbdriver == "postgres" {
+	} else if Dbdriver == "postgres" {
 		DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
 		server.DB, err = gorm.Open(Dbdriver, DBURL)
 		if err != nil {
@@ -42,6 +41,8 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		} else {
 			fmt.Printf("We are connected to the %s database", Dbdriver)
 		}
+	} else {
+		fmt.Println("Unknown Driver")
 	}
 
 	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}) //database migration
@@ -52,6 +53,5 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 }
 
 func (server *Server) Run(addr string) {
-	fmt.Println("Listening to port 8080")
 	log.Fatal(http.ListenAndServe(addr, server.Router))
 }
