@@ -16,7 +16,7 @@ spec:
     spec: 
       containers:
       - name: fullstack-app-postgres 
-        image: victorsteven/fullstack:1.2.3
+        image: victorsteven/fullstack:1.3.0
         imagePullPolicy: IfNotPresent
         ports:
           - name: http
@@ -25,49 +25,6 @@ spec:
           - secretRef:
               name: postgres-secret
       
-        # env:  
-        # - name:  DB_HOST  # Name of the env variable
-        #   valueFrom:      # Get the env value from the kubernetes secrets
-        #     secretKeyRef:
-        #       name: postgres-db-host
-        #       key: DB_HOST    # The key in the .env file
-
-        # - name: DB_DRIVER
-        #   valueFrom: 
-        #     secretKeyRef:
-        #       name: postgres-db-driver
-        #       key: DB_DRIVER 
-
-        # - name: API_SECRET
-        #   valueFrom: 
-        #     secretKeyRef:
-        #       name: api-secret
-        #       key: API_SECRET
-
-        # - name: DB_USER
-        #   valueFrom: 
-        #     secretKeyRef:
-        #       name: postgres-db-user
-        #       key: DB_USER
-
-        # - name: DB_PASSWORD
-        #   valueFrom: 
-        #     secretKeyRef:
-        #       name: postgres-db-password
-        #       key: DB_PASSWORD
-
-        # - name: DB_NAME
-        #   valueFrom: 
-        #     secretKeyRef:
-        #       name: postgres-db-name
-        #       key: DB_NAME
-
-        # - name: DB_PORT
-        #   valueFrom: 
-        #     secretKeyRef:
-        #       name: postgres-db-port
-        #       key: DB_PORT 
-
 
 apiVersion: v1  
 kind: Service 
