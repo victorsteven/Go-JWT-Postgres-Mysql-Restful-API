@@ -307,9 +307,9 @@ func TestUpdatePost(t *testing.T) {
 		{
 			id:           strconv.Itoa(int(AuthPostID)),
 			updateJSON:   `{"title":"This is another title", "content": "This is the updated content"}`,
-			statusCode:   422,
+			statusCode:   401,
 			tokenGiven:   tokenString,
-			errorMessage: "Required Author",
+			errorMessage: "Unauthorized",
 		},
 		{
 			id:         "unknwon",

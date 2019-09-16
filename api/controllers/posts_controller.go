@@ -86,38 +86,66 @@ func (server *Server) GetPost(w http.ResponseWriter, r *http.Request) {
 func (server *Server) UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
+
+	// Check if the post id is valid
 	pid, err := strconv.ParseUint(vars["id"], 10, 64)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
 	}
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-	post := models.Post{}
-	err = json.Unmarshal(body, &post)
-	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-	post.Prepare()
-	err = post.Validate()
-	if err != nil {
-		responses.ERROR(w, http.StatusUnprocessableEntity, err)
-		return
-	}
+
+	//CHeck if the auth token is valid and  get the user id from it
 	uid, err := auth.ExtractTokenID(r)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if uid != post.AuthorID {
-		responses.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+
+	// Check if the post exist
+	post := models.Post{}
+	err = server.DB.Debug().Model(models.Post{}).Where("id = ?", pid).Take(&post).Error
+	if err != nil {
+		responses.ERROR(w, http.StatusNotFound, errors.New("Post not found"))
 		return
 	}
-	postUpdated, err := post.UpdateAPost(server.DB, pid)
+
+	fmt.Printf("User id: %v", uid)
+	fmt.Printf("Post id: %v", post.AuthorID)
+
+	// If a user attempt to update a post not belonging to him
+	if uid != post.AuthorID {
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+	// Read the data posted
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	// Start processing the request data
+	postUpdate := models.Post{}
+	err = json.Unmarshal(body, &postUpdate)
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	//Also check if the request user id is equal to the one gotten from token
+	if uid != postUpdate.AuthorID {
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	postUpdate.Prepare()
+	err = postUpdate.Validate()
+	if err != nil {
+		responses.ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	postUpdated, err := postUpdate.UpdateAPost(server.DB, pid)
 
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
@@ -131,15 +159,30 @@ func (server *Server) DeletePost(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
-	post := models.Post{}
-
+	// Is a valid post id given to us?
 	pid, err := strconv.ParseUint(vars["id"], 10, 64)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
 	}
+
+	// Is this user authenticated?
 	uid, err := auth.ExtractTokenID(r)
 	if err != nil {
+		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+
+	// Check if the post exist
+	post := models.Post{}
+	err = server.DB.Debug().Model(models.Post{}).Where("id = ?", pid).Take(&post).Error
+	if err != nil {
+		responses.ERROR(w, http.StatusNotFound, errors.New("Unauthorized"))
+		return
+	}
+
+	// Is the authenticated user, the owner of this post?
+	if uid != post.AuthorID {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
