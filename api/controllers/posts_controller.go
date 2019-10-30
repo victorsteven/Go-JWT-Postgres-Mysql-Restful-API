@@ -109,9 +109,6 @@ func (server *Server) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("User id: %v", uid)
-	fmt.Printf("Post id: %v", post.AuthorID)
-
 	// If a user attempt to update a post not belonging to him
 	if uid != post.AuthorID {
 		responses.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
@@ -145,7 +142,9 @@ func (server *Server) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postUpdated, err := postUpdate.UpdateAPost(server.DB, pid)
+	postUpdate.ID = post.ID //this is important to tell the model the post id to update, the other update field are set above
+
+	postUpdated, err := postUpdate.UpdateAPost(server.DB)
 
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
