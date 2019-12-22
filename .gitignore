@@ -1,0 +1,4 @@
+*.sqlite
+*.idea/*
+*.idea
+*.idea/.*
