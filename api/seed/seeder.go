@@ -42,10 +42,12 @@ func Load(db *gorm.DB) {
 		log.Fatalf("cannot migrate table: %v", err)
 	}
 
-	err = db.Debug().Model(&models.Post{}).AddForeignKey("author_id", "users(id)", "cascade", "cascade").Error
-	if err != nil {
-		log.Fatalf("attaching foreign key error: %v", err)
-	}
+	/*
+		err = db.Debug().Model(&models.Post{}).AddForeignKey("author_id", "users(id)", "cascade", "cascade").Error
+		if err != nil {
+			log.Fatalf("attaching foreign key error: %v", err)
+		}
+	*/
 
 	for i, _ := range users {
 		err = db.Debug().Model(&models.User{}).Create(&users[i]).Error
