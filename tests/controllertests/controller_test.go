@@ -17,8 +17,7 @@ var userInstance = models.User{}
 var postInstance = models.Post{}
 
 func TestMain(m *testing.M) {
-	var err error
-	err = godotenv.Load(os.ExpandEnv("../../.env"))
+	err := godotenv.Load(os.ExpandEnv("../../.env"))
 	if err != nil {
 		log.Fatalf("Error getting env %v\n", err)
 	}
@@ -54,18 +53,41 @@ func Database() {
 			fmt.Printf("We are connected to the %s database\n", TestDbDriver)
 		}
 	}
+	if TestDbDriver == "sqlite3" {
+		//DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
+		testDbName := os.Getenv("TestDbName")
+		server.DB, err = gorm.Open(TestDbDriver, testDbName)
+		if err != nil {
+			fmt.Printf("Cannot connect to %s database\n", TestDbDriver)
+			log.Fatal("This is the error:", err)
+		} else {
+			fmt.Printf("We are connected to the %s database\n", TestDbDriver)
+		}
+		server.DB.Exec("PRAGMA foreign_keys = ON")
+	}
 }
 
 func refreshUserTable() error {
-	err := server.DB.DropTableIfExists(&models.User{}).Error
+	/*
+		err := server.DB.DropTableIfExists(&models.User{}).Error
+		if err != nil {
+			return err
+		}
+		err = server.DB.AutoMigrate(&models.User{}).Error
+		if err != nil {
+			return err
+		}
+	*/
+	err := server.DB.DropTableIfExists(&models.Post{}, &models.User{}).Error
 	if err != nil {
 		return err
 	}
-	err = server.DB.AutoMigrate(&models.User{}).Error
+	err = server.DB.AutoMigrate(&models.User{}, &models.Post{}).Error
 	if err != nil {
 		return err
 	}
-	log.Printf("Successfully refreshed table")
+
+	log.Printf("Successfully refreshed table(s)")
 	return nil
 }
 
@@ -118,7 +140,7 @@ func seedUsers() ([]models.User, error) {
 
 func refreshUserAndPostTable() error {
 
-	err := server.DB.DropTableIfExists(&models.User{}, &models.Post{}).Error
+	err := server.DB.DropTableIfExists(&models.Post{}, &models.User{}).Error
 	if err != nil {
 		return err
 	}

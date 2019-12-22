@@ -24,7 +24,11 @@ func TestMain(m *testing.M) {
 	}
 	Database()
 
-	os.Exit(m.Run())
+	log.Printf("Before calling m.Run() !!!")
+	ret := m.Run()
+	log.Printf("After calling m.Run() !!!")
+	//os.Exit(m.Run())
+	os.Exit(ret)
 }
 
 func Database() {
@@ -53,24 +57,39 @@ func Database() {
 			fmt.Printf("We are connected to the %s database\n", TestDbDriver)
 		}
 	}
+	if TestDbDriver == "sqlite3" {
+		//DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
+		testDbName := os.Getenv("TestDbName")
+		server.DB, err = gorm.Open(TestDbDriver, testDbName)
+		if err != nil {
+			fmt.Printf("Cannot connect to %s database\n", TestDbDriver)
+			log.Fatal("This is the error:", err)
+		} else {
+			fmt.Printf("We are connected to the %s database\n", TestDbDriver)
+		}
+		server.DB.Exec("PRAGMA foreign_keys = ON")
+	}
+
 }
 
 func refreshUserTable() error {
-	err := server.DB.DropTableIfExists(&models.User{}).Error
+	err := server.DB.Debug().DropTableIfExists(&models.User{}).Error
 	if err != nil {
 		return err
 	}
-	err = server.DB.AutoMigrate(&models.User{}).Error
+	err = server.DB.Debug().AutoMigrate(&models.User{}).Error
 	if err != nil {
 		return err
 	}
+
 	log.Printf("Successfully refreshed table")
+	log.Printf("refreshUserTable routine OK !!!")
 	return nil
 }
 
 func seedOneUser() (models.User, error) {
 
-	refreshUserTable()
+	_ = refreshUserTable()
 
 	user := models.User{
 		Nickname: "Pet",
@@ -78,10 +97,12 @@ func seedOneUser() (models.User, error) {
 		Password: "password",
 	}
 
-	err := server.DB.Model(&models.User{}).Create(&user).Error
+	err := server.DB.Debug().Model(&models.User{}).Create(&user).Error
 	if err != nil {
 		log.Fatalf("cannot seed users table: %v", err)
 	}
+
+	log.Printf("seedOneUser routine OK !!!")
 	return user, nil
 }
 
@@ -100,26 +121,30 @@ func seedUsers() error {
 		},
 	}
 
-	for i, _ := range users {
-		err := server.DB.Model(&models.User{}).Create(&users[i]).Error
+	for i := range users {
+		err := server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
 			return err
 		}
 	}
+
+	log.Printf("seedUsers routine OK !!!")
 	return nil
 }
 
 func refreshUserAndPostTable() error {
 
-	err := server.DB.DropTableIfExists(&models.User{}, &models.Post{}).Error
+	// NOTE: when deleting first delete Post as Post is depending on User table
+	err := server.DB.Debug().DropTableIfExists(&models.Post{}, &models.User{}).Error
 	if err != nil {
 		return err
 	}
-	err = server.DB.AutoMigrate(&models.User{}, &models.Post{}).Error
+	err = server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}).Error
 	if err != nil {
 		return err
 	}
 	log.Printf("Successfully refreshed tables")
+	log.Printf("refreshUserAndPostTable routine OK !!!")
 	return nil
 }
 
@@ -134,7 +159,7 @@ func seedOneUserAndOnePost() (models.Post, error) {
 		Email:    "sam@gmail.com",
 		Password: "password",
 	}
-	err = server.DB.Model(&models.User{}).Create(&user).Error
+	err = server.DB.Debug().Model(&models.User{}).Create(&user).Error
 	if err != nil {
 		return models.Post{}, err
 	}
@@ -143,10 +168,12 @@ func seedOneUserAndOnePost() (models.Post, error) {
 		Content:  "This is the content sam",
 		AuthorID: user.ID,
 	}
-	err = server.DB.Model(&models.Post{}).Create(&post).Error
+	err = server.DB.Debug().Model(&models.Post{}).Create(&post).Error
 	if err != nil {
 		return models.Post{}, err
 	}
+
+	log.Printf("seedOneUserAndOnePost routine OK !!!")
 	return post, nil
 }
 
@@ -180,17 +207,18 @@ func seedUsersAndPosts() ([]models.User, []models.Post, error) {
 		},
 	}
 
-	for i, _ := range users {
-		err = server.DB.Model(&models.User{}).Create(&users[i]).Error
+	for i := range users {
+		err = server.DB.Debug().Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed users table: %v", err)
 		}
 		posts[i].AuthorID = users[i].ID
 
-		err = server.DB.Model(&models.Post{}).Create(&posts[i]).Error
+		err = server.DB.Debug().Model(&models.Post{}).Create(&posts[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed posts table: %v", err)
 		}
 	}
+	log.Printf("seedUsersAndPosts routine OK !!!")
 	return users, posts, nil
 }
