@@ -17,7 +17,7 @@ func TestFindAllPosts(t *testing.T) {
 	}
 	_, _, err = seedUsersAndPosts()
 	if err != nil {
-		log.Fatalf("Error seeding user and post  table %v\n", err)
+		log.Fatalf("Error seeding user and post table %v\n", err)
 	}
 	posts, err := postInstance.FindAllPosts(server.DB)
 	if err != nil {
@@ -65,7 +65,7 @@ func TestGetPostByID(t *testing.T) {
 	}
 	post, err := seedOneUserAndOnePost()
 	if err != nil {
-		log.Fatalf("Error Seeding table")
+		log.Fatalf("Error Seeding User and post table")
 	}
 	foundPost, err := postInstance.FindPostByID(server.DB, post.ID)
 	if err != nil {
@@ -116,7 +116,7 @@ func TestDeleteAPost(t *testing.T) {
 	}
 	isDeleted, err := postInstance.DeleteAPost(server.DB, post.ID, post.AuthorID)
 	if err != nil {
-		t.Errorf("this is the error updating the user: %v\n", err)
+		t.Errorf("this is the error deleting the user: %v\n", err)
 		return
 	}
 	//one shows that the record has been deleted or:
