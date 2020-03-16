@@ -2,3 +2,6 @@
 
 # Go-JWT-Postgres-Mysql-Restful-API
 This is a application build with golang, jwt, gorm, postgresql, mysql
+
+You can follow the guide here:
+https://levelup.gitconnected.com/crud-restful-api-with-go-gorm-jwt-postgres-mysql-and-testing-460a85ab7121
