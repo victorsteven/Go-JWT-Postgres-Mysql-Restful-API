@@ -73,15 +73,16 @@ func Database() {
 }
 
 func refreshUserTable() error {
+	server.DB.Exec("SET foreign_key_checks=0")
 	err := server.DB.Debug().DropTableIfExists(&models.User{}).Error
 	if err != nil {
 		return err
 	}
+	server.DB.Exec("SET foreign_key_checks=1")
 	err = server.DB.Debug().AutoMigrate(&models.User{}).Error
 	if err != nil {
 		return err
 	}
-
 	log.Printf("Successfully refreshed table")
 	log.Printf("refreshUserTable routine OK !!!")
 	return nil
@@ -134,11 +135,13 @@ func seedUsers() error {
 
 func refreshUserAndPostTable() error {
 
+	server.DB.Exec("SET foreign_key_checks=0")
 	// NOTE: when deleting first delete Post as Post is depending on User table
 	err := server.DB.Debug().DropTableIfExists(&models.Post{}, &models.User{}).Error
 	if err != nil {
 		return err
 	}
+	server.DB.Exec("SET foreign_key_checks=1")
 	err = server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}).Error
 	if err != nil {
 		return err
